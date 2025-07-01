@@ -1,0 +1,111 @@
+:root {
+  --rojo: #c62828;
+  --amarillo: #ffeb3b;
+  --amarillo-dark: #fbc02d;
+  --blanco: #ffffff;
+  --gris-suave: #f9f9f9;
+  --negro: #222;
+  --sombra: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  background-color: var(--gris-suave);
+  font-family: "Poppins", sans-serif;
+  color: var(--negro);
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--rojo) !important;
+  box-shadow: var(--sombra);
+}
+
+.navbar .navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: var(--amarillo) !important;
+}
+
+.navbar .btn-outline-light:hover {
+  background-color: var(--amarillo);
+  color: var(--rojo) !important;
+}
+
+/* Sidebar */
+.sidebar {
+  background-color: var(--amarillo);
+  min-height: 100vh;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.05);
+}
+
+.sidebar .nav-link {
+  color: var(--rojo);
+  font-weight: 600;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background-color: var(--rojo);
+  color: var(--blanco);
+}
+
+/* Cards */
+.card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: var(--sombra);
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.card-title {
+  color: var(--rojo);
+  font-weight: 700;
+}
+
+/* Botones */
+.btn-primary {
+  background-color: var(--rojo);
+  border: none;
+  font-weight: bold;
+}
+
+.btn-primary:hover {
+  background-color: #b71c1c;
+}
+
+.btn {
+  border-radius: 12px;
+}
+
+/* Login Form */
+.card.login {
+  border-left: 6px solid var(--amarillo-dark);
+  border-radius: 15px;
+  box-shadow: var(--sombra);
+}
+
+/* Encabezados */
+h1, h2, h3 {
+  color: var(--rojo);
+  font-weight: 700;
+}
+
+body {
+  background: linear-gradient(135deg, var(--amarillo), var(--blanco), var(--rojo));
+  background-size: 400% 400%;
+  animation: fondo 15s ease infinite;
+  font-family: "Poppins", sans-serif;
+  color: var(--negro);
+}
+
+@keyframes fondo {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
