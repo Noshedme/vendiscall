@@ -21,7 +21,7 @@ export const Header = () => {
           <span style={{ color: "var(--amarillo-dark)" }}>market</span>
         </span>
         <div className="ms-auto d-flex align-items-center">
-          <span className="text-white me-3">Hola, {user?.username}</span>
+          <span className="text-white me-3">Bienvenid@, {user?.username}</span>
           <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>
             Cerrar sesión
           </button>

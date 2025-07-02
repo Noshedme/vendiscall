@@ -7,8 +7,8 @@ export const LoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("admin_temp");
-  const [password, setPassword] = useState("admin123");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("1234");
 
   const handleSubmit = (e) => {
     e.preventDefault();

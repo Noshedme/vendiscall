@@ -8,22 +8,41 @@
   --sombra: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* Layout más compacto */
 body {
-  background-color: var(--gris-suave);
+  background: linear-gradient(135deg, var(--amarillo), var(--blanco), var(--rojo));
+  background-size: 400% 400%;
+  animation: fondo 15s ease infinite;
   font-family: "Poppins", sans-serif;
   color: var(--negro);
+  margin: 0;
+  padding: 0;
+  line-height: 1.4; /* Reducir altura de línea */
 }
 
-/* Navbar */
+@keyframes fondo {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Layout flex para ocupar toda la altura */
+.min-vh-100 {
+  min-height: 100vh;
+}
+
+/* Navbar más compacto */
 .navbar {
   background-color: var(--rojo) !important;
   box-shadow: var(--sombra);
+  padding: 0.5rem 1rem; /* Reducir padding */
 }
 
 .navbar .navbar-brand {
   font-weight: bold;
-  font-size: 1.5rem;
+  font-size: 1.3rem; /* Ligeramente más pequeño */
   color: var(--amarillo) !important;
+  margin: 0;
 }
 
 .navbar .btn-outline-light:hover {
@@ -31,11 +50,12 @@ body {
   color: var(--rojo) !important;
 }
 
-/* Sidebar */
+/* Sidebar más compacto */
 .sidebar {
   background-color: var(--amarillo);
-  min-height: 100vh;
+  min-height: calc(100vh - 60px); /* Ajustar altura */
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.05);
+  padding-top: 1rem !important;
 }
 
 .sidebar .nav-link {
@@ -43,6 +63,8 @@ body {
   font-weight: 600;
   border-radius: 8px;
   transition: background-color 0.3s;
+  padding: 0.5rem 1rem; /* Reducir padding */
+  margin-bottom: 0.5rem;
 }
 
 .sidebar .nav-link:hover,
@@ -51,36 +73,111 @@ body {
   color: var(--blanco);
 }
 
-/* Cards */
+/* Cards mejoradas */
 .card {
   border: none;
-  border-radius: 15px;
+  border-radius: 12px;
   box-shadow: var(--sombra);
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  height: 100%;
 }
 
-.card:hover {
-  transform: translateY(-3px);
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .card-title {
   color: var(--rojo);
   font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
 }
 
-/* Botones */
+.card-text {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+/* Iconos de las cards */
+.card-body i {
+  color: var(--rojo);
+  margin-bottom: 0.75rem;
+}
+
+/* Botones más compactos */
 .btn-primary {
   background-color: var(--rojo);
   border: none;
   font-weight: bold;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
 }
 
 .btn-primary:hover {
   background-color: #b71c1c;
+  transform: translateY(-1px);
 }
 
 .btn {
-  border-radius: 12px;
+  border-radius: 8px;
+}
+
+/* Reducir espaciado general */
+.container-fluid {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+main {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+/* Espaciado entre cards */
+.g-3 {
+  --bs-gutter-x: 1rem;
+  --bs-gutter-y: 1rem;
+}
+
+/* Footer compacto */
+footer {
+  padding: 0.75rem 0 !important;
+  margin-top: 1rem !important;
+}
+
+footer small {
+  font-size: 0.8rem;
+}
+
+/* Estadísticas rápidas */
+.border-end {
+  border-right: 1px solid #dee2e6 !important;
+}
+
+@media (max-width: 768px) {
+  .border-end {
+    border-right: none !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Encabezados más compactos */
+h1, h2, h3 {
+  color: var(--rojo);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.h2 {
+  font-size: 1.5rem;
 }
 
 /* Login Form */
@@ -90,22 +187,261 @@ body {
   box-shadow: var(--sombra);
 }
 
-/* Encabezados */
-h1, h2, h3 {
+/* Optimizaciones para pantallas grandes */
+@media (min-width: 1200px) {
+  .col-xl-3 {
+    max-width: 280px;
+  }
+  
+  .row.justify-content-center {
+    gap: 0.5rem;
+  }
+}
+
+/* Responsive mejorado */
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 1.1rem !important;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .card-title {
+    font-size: 1rem;
+  }
+  
+  .card-text {
+    font-size: 0.85rem;
+  }
+}
+
+/* Estilos adicionales para la página de usuarios - Agregar a global.css */
+
+/* Tabla de usuarios */
+.table-hover tbody tr:hover {
+  background-color: rgba(198, 40, 40, 0.05);
+  cursor: pointer;
+}
+
+.table thead th {
+  border-bottom: 2px solid var(--rojo);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table tbody td {
+  vertical-align: middle;
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Avatar circular */
+.avatar .rounded-circle {
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Badges personalizados */
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* Cards de estadísticas */
+.card.bg-primary,
+.card.bg-warning,
+.card.bg-danger,
+.card.bg-success {
+  transition: transform 0.2s;
+}
+
+.card.bg-primary:hover,
+.card.bg-warning:hover,
+.card.bg-danger:hover,
+.card.bg-success:hover {
+  transform: translateY(-2px);
+}
+
+/* Controles de filtro */
+.form-label {
   color: var(--rojo);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-select,
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-select:focus,
+.form-control:focus {
+  border-color: var(--rojo);
+  box-shadow: 0 0 0 0.2rem rgba(198, 40, 40, 0.25);
+}
+
+/* Input group */
+.input-group-text {
+  background-color: var(--amarillo);
+  border: 2px solid #e9ecef;
+  border-right: none;
+  color: var(--rojo);
+}
+
+.input-group .form-control {
+  border-left: none;
+}
+
+/* Botones de acción */
+.btn-group .btn {
+  border-radius: 6px;
+  margin-right: 2px;
+  transition: all 0.2s;
+}
+
+.btn-group .btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Modal personalizado */
+.modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  background-color: var(--amarillo);
+  color: var(--rojo);
+  border-bottom: 2px solid var(--rojo);
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-title {
   font-weight: 700;
 }
 
-body {
-  background: linear-gradient(135deg, var(--amarillo), var(--blanco), var(--rojo));
-  background-size: 400% 400%;
-  animation: fondo 15s ease infinite;
-  font-family: "Poppins", sans-serif;
+.modal-body h6 {
+  color: var(--rojo);
+  font-weight: 600;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.modal-body p {
+  margin-bottom: 0.75rem;
+  color: #555;
+}
+
+.modal-body strong {
   color: var(--negro);
 }
 
-@keyframes fondo {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* Estado vacío */
+.text-center.py-5 i {
+  opacity: 0.3;
+}
+
+/* Card header personalizado */
+.card-header.bg-light {
+  background-color: var(--amarillo) !important;
+  border-bottom: 2px solid var(--rojo);
+}
+
+.card-header h5 {
+  color: var(--rojo);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.85rem;
+  }
+  
+  .btn-group {
+    flex-direction: column;
+  }
+  
+  .btn-group .btn {
+    margin-bottom: 2px;
+    margin-right: 0;
+  }
+  
+  .avatar .rounded-circle {
+    width: 25px !important;
+    height: 25px !important;
+    font-size: 0.7rem;
+  }
+  
+  .modal-dialog {
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .table thead {
+    display: none;
+  }
+  
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+  
+  .table tr {
+    border: 1px solid #ccc;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .table td {
+    border: none !important;
+    position: relative;
+    padding-left: 50% !important;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .table td:before {
+    content: attr(data-label) ": ";
+    position: absolute;
+    left: 6px;
+    width: 45%;
+    font-weight: bold;
+    color: var(--rojo);
+  }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.table tbody tr {
+  animation: fadeIn 0.3s ease-out;
 }

@@ -7,7 +7,7 @@ export const Sidebar = () => {
       <ul className="nav flex-column">
         <li className="nav-item mb-2">
           <NavLink to="/admin" className="nav-link">
-            <i className="bi bi-speedometer2"></i> Dashboard
+            <i className="bi bi-speedometer2"></i> Panel
           </NavLink>
         </li>
         <li className="nav-item mb-2">
@@ -18,6 +18,11 @@ export const Sidebar = () => {
         <li className="nav-item mb-2">
           <NavLink to="/admin/productos" className="nav-link">
             <i className="bi bi-box-seam"></i> Productos
+          </NavLink>
+        </li>
+        <li className="nav-item mb-2">
+          <NavLink to="/admin/reportes" className="nav-link">
+            <i className="bi bi-graph-up"></i> Reportes
           </NavLink>
         </li>
       </ul>
