@@ -6,6 +6,11 @@ import { DashboardAdmin } from "../pages/DashboardAdmin";
 import { DashboardCajero } from "../pages/DashboardCajero";
 import { DashboardCliente } from "../pages/DashboardCliente";
 
+// ✅ Asegúrate de importar correctamente
+import { Usuarios } from "../pages/Usuarios";
+import { Productos } from "../pages/Productos";
+import { Reportes } from "../pages/Reportes";
+
 export const AppRoutes = () => {
   const { user } = useAuth();
 
@@ -18,6 +23,7 @@ export const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+
       <Route
         path="/admin"
         element={
@@ -27,6 +33,31 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path="/admin/usuarios"
+        element={
+          <ProtectedRoute role="admin">
+            <Usuarios />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/productos"
+        element={
+          <ProtectedRoute role="admin">
+            <Productos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reportes"
+        element={
+          <ProtectedRoute role="admin">
+            <Reportes />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/cajero"
         element={
           <ProtectedRoute role="cajero">
@@ -34,6 +65,7 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/cliente"
         element={
