@@ -1,3 +1,4 @@
+/*global.css*/
 :root {
   --rojo: #c62828;
   --amarillo: #ffeb3b;
@@ -190,7 +191,7 @@ h1, h2, h3 {
 /* Optimizaciones para pantallas grandes */
 @media (min-width: 1200px) {
   .col-xl-3 {
-    max-width: 280px;
+    max-width: 100%;
   }
   
   .row.justify-content-center {
@@ -445,3 +446,4 @@ h1, h2, h3 {
 .table tbody tr {
   animation: fadeIn 0.3s ease-out;
 }
+

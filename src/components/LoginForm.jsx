@@ -26,7 +26,7 @@ export const LoginForm = () => {
     <div className="container mt-5">
       <div className="card login mx-auto p-4 shadow" style={{ maxWidth: "400px" }}>
         <div className="text-center mb-3">
-          <img src={logo} alt="Logo tienda" style={{ maxWidth: "160px" }} />
+          <img src={logo} alt="Logo tienda" style={{ maxWidth: "160px", borderRadius: "30%"}} />
         </div>
 
         {/* Título personalizado */}
