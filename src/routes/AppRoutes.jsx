@@ -1,12 +1,15 @@
-// src/routes/AppRoutes.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+
 import { Login } from "../pages/Login";
 import { DashboardAdmin } from "../pages/DashboardAdmin";
 import { DashboardCajero } from "../pages/DashboardCajero";
 import { DashboardCliente } from "../pages/DashboardCliente";
 
-// ✅ Asegúrate de importar correctamente
+import { CuentaCliente } from "../pages/CuentaCliente";
+import { CategoriasProductos } from "../pages/CategoriasProductos";
+import { CarritoCliente } from "../pages/CarritoCliente";
+
 import { Usuarios } from "../pages/Usuarios";
 import { Productos } from "../pages/Productos";
 import { Reportes } from "../pages/Reportes";
@@ -22,8 +25,10 @@ export const AppRoutes = () => {
 
   return (
     <Routes>
+      {/* Página de inicio de sesión */}
       <Route path="/" element={<Login />} />
 
+      {/* Rutas para administrador */}
       <Route
         path="/admin"
         element={
@@ -57,6 +62,7 @@ export const AppRoutes = () => {
         }
       />
 
+      {/* Rutas para cajero */}
       <Route
         path="/cajero"
         element={
@@ -66,11 +72,36 @@ export const AppRoutes = () => {
         }
       />
 
+      {/* Rutas para cliente */}
       <Route
         path="/cliente"
         element={
           <ProtectedRoute role="cliente">
             <DashboardCliente />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cliente/cuenta"
+        element={
+          <ProtectedRoute role="cliente">
+            <CuentaCliente />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cliente/categorias"
+        element={
+          <ProtectedRoute role="cliente">
+            <CategoriasProductos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cliente/carrito"
+        element={
+          <ProtectedRoute role="cliente">
+            <CarritoCliente />
           </ProtectedRoute>
         }
       />

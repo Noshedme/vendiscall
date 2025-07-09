@@ -50,7 +50,7 @@ const productosData = [
     codigo: "3456789012345",
     nombre: "Jabón Líquido",
     precio: 4.75,
-    stock: 8,
+    stock: 100,
     categoria: "Limpieza",
     imagen: "bi-droplet-fill",
     estado: "stock_bajo"
@@ -223,77 +223,66 @@ export const Productos = () => {
               </div>
             </div>
 
-            {/* Filtros */}
-            <div className="card shadow mb-4">
-              <div className="card-header py-3">
-                <h6 className="m-0 font-weight-bold text-primary">
-                  <i className="bi bi-funnel me-2"></i>
-                  Filtros de Búsqueda
-                </h6>
-              </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-4 mb-3">
-                    <label className="form-label fw-bold">Buscar Producto</label>
-                    <div className="input-group">
-                      <span className="input-group-text">
-                        <i className="bi bi-search"></i>
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Buscar por nombre o código..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 mb-3">
-                    <label className="form-label fw-bold">Categoría</label>
-                    <select
-                      className="form-select"
-                      value={filtroCategoria}
-                      onChange={(e) => setFiltroCategoria(e.target.value)}
-                    >
-                      <option value="">Todas las categorías</option>
-                      {categorias.map(categoria => (
-                        <option key={categoria} value={categoria}>{categoria}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-md-4 mb-3">
-                    <label className="form-label fw-bold">Estado</label>
-                    <select
-                      className="form-select"
-                      value={filtroEstado}
-                      onChange={(e) => setFiltroEstado(e.target.value)}
-                    >
-                      <option value="">Todos los estados</option>
-                      <option value="disponible">Disponible</option>
-                      <option value="stock_bajo">Stock Bajo</option>
-                      <option value="agotado">Agotado</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Tabla de productos */}
             <div className="card shadow mb-4">
               <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 className="m-0 font-weight-bold text-primary">
                   Inventario ({productosFiltrados.length} productos)
                 </h6>
-                <div className="dropdown no-arrow">
-                  <a className="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown">
-                    <i className="bi bi-three-dots-vertical text-gray-400"></i>
-                  </a>
-                  <div className="dropdown-menu dropdown-menu-right shadow">
-                    <div className="dropdown-header">Acciones:</div>
-                    <a className="dropdown-item" href="#">Exportar todo</a>
-                    <a className="dropdown-item" href="#">Importar productos</a>
-                    <div className="dropdown-divider"></div>
-                    <a className="dropdown-item" href="#">Configuración</a>
+                <div className="d-flex align-items-center gap-3">
+                  {/* Buscador compacto */}
+                  <div className="d-flex align-items-center gap-2">
+                    <div className="input-group" style={{width: "250px"}}>
+                      <span className="input-group-text">
+                        <i className="bi bi-search"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Buscar producto..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                      />
+                    </div>
+                    
+                    {/* Filtros compactos */}
+                    <select
+                      className="form-select form-select-sm"
+                      value={filtroCategoria}
+                      onChange={(e) => setFiltroCategoria(e.target.value)}
+                      style={{width: "150px"}}
+                    >
+                      <option value="">Categoría</option>
+                      {categorias.map(categoria => (
+                        <option key={categoria} value={categoria}>{categoria}</option>
+                      ))}
+                    </select>
+                    
+                    <select
+                      className="form-select form-select-sm"
+                      value={filtroEstado}
+                      onChange={(e) => setFiltroEstado(e.target.value)}
+                      style={{width: "120px"}}
+                    >
+                      <option value="">Estado</option>
+                      <option value="disponible">Disponible</option>
+                      <option value="stock_bajo">Stock Bajo</option>
+                      <option value="agotado">Agotado</option>
+                    </select>
+                  </div>
+
+                  {/* Menú de opciones */}
+                  <div className="dropdown no-arrow">
+                    <a className="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown">
+                      <i className="bi bi-three-dots-vertical text-gray-400"></i>
+                    </a>
+                    <div className="dropdown-menu dropdown-menu-right shadow">
+                      <div className="dropdown-header">Acciones:</div>
+                      <a className="dropdown-item" href="#">Exportar todo</a>
+                      <a className="dropdown-item" href="#">Importar productos</a>
+                      <div className="dropdown-divider"></div>
+                      <a className="dropdown-item" href="#">Configuración</a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -303,7 +292,7 @@ export const Productos = () => {
                     <thead className="table-light">
                       <tr>
                         <th width="5%">#</th>
-                        <th width="8%">Imagen</th>
+                        <th width="8%"></th>
                         <th width="20%">Producto</th>
                         <th width="15%">Categoría</th>
                         <th width="15%">Código</th>
