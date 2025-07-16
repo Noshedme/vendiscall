@@ -3,9 +3,15 @@ import { useAuth } from "../context/AuthContext";
 
 import { Login } from "../pages/Login";
 import { DashboardAdmin } from "../pages/DashboardAdmin";
-import { DashboardCajero } from "../pages/DashboardCajero";
-import { DashboardCliente } from "../pages/DashboardCliente";
 
+import { DashboardCajero } from "../pages/DashboardCajero";
+import { CuentaCajero } from "../pages/CuentaCajero";
+import { BuscarProductoCajero } from "../pages/BuscarProductoCajero";
+import { HistorialVentasCajero } from "../pages/HistorialVentasCajero";
+import { CajaCajero } from "../pages/CajaCajero";
+
+
+import { DashboardCliente } from "../pages/DashboardCliente";
 import { CuentaCliente } from "../pages/CuentaCliente";
 import { CategoriasProductos } from "../pages/CategoriasProductos";
 import { CarritoCliente } from "../pages/CarritoCliente";
@@ -105,6 +111,44 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      <Route
+  path="/cajero/cuenta"
+  element={
+    <ProtectedRoute role="cajero">
+      <CuentaCajero />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/cajero/buscar"
+  element={
+    <ProtectedRoute role="cajero">
+      <BuscarProductoCajero />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/cajero/historial"
+  element={
+    <ProtectedRoute role="cajero">
+      <HistorialVentasCajero />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/cajero/caja"
+  element={
+    <ProtectedRoute role="cajero">
+      <CajaCajero />
+    </ProtectedRoute>
+  }
+/>
+
+
     </Routes>
   );
 };

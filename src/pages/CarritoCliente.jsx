@@ -129,13 +129,6 @@ export function CarritoCliente() {
           </main>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-danger text-white text-center py-2 mt-auto">
-        <small>
-          Vendismarket S.A.S. — Av. González Suárez N32-17, Edif. Cc la Frutería Pb Local 3, Quito, Pichincha.
-        </small>
-      </footer>
     </div>
   );
 }
