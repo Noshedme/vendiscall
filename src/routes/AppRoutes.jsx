@@ -17,6 +17,7 @@ import { CategoriasProductos } from "../pages/CategoriasProductos";
 import { CarritoCliente } from "../pages/CarritoCliente";
 
 import { Usuarios } from "../pages/Usuarios";
+import { RegisterCliente } from "../pages/RegisterCliente"
 import { Productos } from "../pages/Productos";
 import { Reportes } from "../pages/Reportes";
 
@@ -148,6 +149,9 @@ export const AppRoutes = () => {
   }
 />
 
+<Route
+  path="/register" 
+  element={<RegisterCliente />} />
 
     </Routes>
   );

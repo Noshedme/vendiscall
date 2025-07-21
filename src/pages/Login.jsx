@@ -1,9 +1,11 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
 import { LoginForm } from "../components/LoginForm";
+import { useNavigate } from "react-router-dom";
 
 export function Login() {
   const [mostrarContactos, setMostrarContactos] = useState(false);
+  const navigate = useNavigate();
 
   const toggleContactos = () => {
     setMostrarContactos(!mostrarContactos);
@@ -18,10 +20,18 @@ export function Login() {
       {/* Botón Contáctanos */}
       <div className="text-center mb-2">
         <button
-          className="btn btn-outline-light text-dark"
+          className="btn btn-outline-light text-dark me-2"
           onClick={toggleContactos}
         >
           <i className="bi bi-telephone me-2"></i> Contáctanos
+        </button>
+
+        {/* Botón Registrarse */}
+        <button
+          className="btn btn-outline-light text-dark me-2"
+          onClick={() => navigate("/register")}
+        >
+          <i className="bi bi-person-plus me-2"></i> Registrarse
         </button>
       </div>
 
