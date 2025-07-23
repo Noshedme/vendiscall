@@ -25,14 +25,6 @@ export function Login() {
         >
           <i className="bi bi-telephone me-2"></i> Contáctanos
         </button>
-
-        {/* Botón Registrarse */}
-        <button
-          className="btn btn-outline-light text-dark me-2"
-          onClick={() => navigate("/register")}
-        >
-          <i className="bi bi-person-plus me-2"></i> Registrarse
-        </button>
       </div>
 
       {/* Panel de redes sociales */}

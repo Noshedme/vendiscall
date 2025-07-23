@@ -6,8 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import classNames from "classnames";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { useNavigate } from "react-router-dom";
 
 export function RegisterCliente() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     nombres: "",
     apellidos: "",
@@ -87,7 +90,6 @@ export function RegisterCliente() {
   };
 
   const validarUsuario = (usuario) => {
-    // Solo letras, números y guiones bajos, mínimo 3 caracteres
     return /^[a-zA-Z0-9_]{3,20}$/.test(usuario);
   };
 
@@ -106,7 +108,6 @@ export function RegisterCliente() {
     
     setFormData({ ...formData, [name]: valorFinal });
 
-    // Validaciones específicas
     const nuevosErrores = { ...errores };
     
     if (name === "cedula" && value && !validarCedula(value)) {
@@ -151,62 +152,61 @@ export function RegisterCliente() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const nuevosErrores = {};
-  Object.entries(formData).forEach(([campo, valor]) => {
-    if (campo === "terminos") {
-      if (!valor) nuevosErrores[campo] = "Debes aceptar los términos";
-      return;
-    }
-    if (!valor.trim()) {
-      nuevosErrores[campo] = "Campo requerido";
-    }
-  });
-
-  if (formData.contrasena !== formData.confirmarContrasena) {
-    nuevosErrores.confirmarContrasena = "Las contraseñas no coinciden";
-  }
-
-  if (Object.keys(nuevosErrores).length > 0) {
-    setErrores(nuevosErrores);
-    return;
-  }
-
-  try {
-    const res = await fetch("http://localhost:3001/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
+    const nuevosErrores = {};
+    Object.entries(formData).forEach(([campo, valor]) => {
+      if (campo === "terminos") {
+        if (!valor) nuevosErrores[campo] = "Debes aceptar los términos";
+        return;
+      }
+      if (!valor.trim()) {
+        nuevosErrores[campo] = "Campo requerido";
+      }
     });
 
-    if (res.ok) {
-      toast.success("🎉 ¡Cuenta registrada exitosamente!");
-      setFormData({
-        nombres: "",
-        apellidos: "",
-        usuario: "",
-        cedula: "",
-        celular: "",
-        contrasena: "",
-        confirmarContrasena: "",
-        fecha_nacimiento: "",
-        edificio: "",
-        departamento: "",
-        terminos: false,
-      });
-      setCurrentStep(1);
-    } else {
-      const error = await res.json();
-      toast.error(error.message || "Error al registrar");
+    if (formData.contrasena !== formData.confirmarContrasena) {
+      nuevosErrores.confirmarContrasena = "Las contraseñas no coinciden";
     }
-  } catch (err) {
-    console.error("Error de red:", err);
-    toast.error("Error de red al registrar");
-  }
-};
 
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrores(nuevosErrores);
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:3001/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        toast.success("🎉 ¡Cuenta registrada exitosamente!");
+        setFormData({
+          nombres: "",
+          apellidos: "",
+          usuario: "",
+          cedula: "",
+          celular: "",
+          contrasena: "",
+          confirmarContrasena: "",
+          fecha_nacimiento: "",
+          edificio: "",
+          departamento: "",
+          terminos: false,
+        });
+        setCurrentStep(1);
+      } else {
+        const error = await res.json();
+        toast.error(error.message || "Error al registrar");
+      }
+    } catch (err) {
+      console.error("Error de red:", err);
+      toast.error("Error de red al registrar");
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -490,13 +490,14 @@ const handleSubmit = async (e) => {
                 >
                   <p className="text-muted mb-0">
                     ¿Ya tienes cuenta?{' '}
-                    <a 
-                      href="#" 
-                      className="text-decoration-none fw-bold"
+                    <button
+                      type="button"
+                      onClick={() => navigate("/")}
+                      className="btn btn-link p-0 text-decoration-none fw-bold"
                       style={{ color: 'var(--rojo)' }}
                     >
                       Inicia sesión aquí
-                    </a>
+                    </button>
                   </p>
                 </motion.div>
               </div>

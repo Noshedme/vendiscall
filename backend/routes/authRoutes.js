@@ -1,4 +1,3 @@
-// backend/routes/authRoutes.js
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
@@ -19,7 +18,7 @@ router.post("/register", async (req, res) => {
       departamento,
     } = req.body;
 
-    // Verificar si ya existe el usuario
+    // Verificar si ya existe el usuario (por cédula o email)
     const userExist = await pool.query(
       "SELECT * FROM usuarios WHERE cedula = $1 OR email = $2",
       [cedula, usuario]
@@ -32,16 +31,16 @@ router.post("/register", async (req, res) => {
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(contrasena, 10);
 
-    // Insertar nuevo usuario
+    // Insertar nuevo usuario con rol 3 (cliente)
     const nuevo = await pool.query(
       `INSERT INTO usuarios (
         email, cedula, rol_id, nombres, apellidos, celular,
         contrasena, fecha_nacimiento, edificio, departamento
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, email, rol_id, nombres, apellidos`,
       [
         usuario,
         cedula,
-        3, // rol_id 3 para cliente
+        3,
         nombres,
         apellidos,
         celular,
@@ -52,12 +51,9 @@ router.post("/register", async (req, res) => {
       ]
     );
 
-    // No retornar la contraseña
-    const { contrasena: _, ...userWithoutPassword } = nuevo.rows[0];
-
     res.status(201).json({ 
       message: "Registrado correctamente", 
-      user: userWithoutPassword 
+      user: nuevo.rows[0] 
     });
   } catch (err) {
     console.error("Error al registrar:", err);
@@ -74,9 +70,9 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Email y contraseña son requeridos" });
     }
 
-    // Buscar usuario por email
+    // Buscar usuario por email, seleccionando campos importantes (incluyendo rol_id)
     const result = await pool.query(
-      "SELECT * FROM usuarios WHERE email = $1", 
+      "SELECT id, email, rol_id, nombres, apellidos, celular, contrasena FROM usuarios WHERE email = $1", 
       [email]
     );
 
@@ -86,17 +82,18 @@ router.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
-    // Verificar contraseña
+    // Verificar contraseña con bcrypt
     const validPassword = await bcrypt.compare(contrasena, user.contrasena);
 
     if (!validPassword) {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
 
-    // Remover contraseña del objeto usuario
-    const { contrasena: _, ...userWithoutPassword } = user;
+    // No enviar la contraseña al frontend
+    delete user.contrasena;
 
-    res.json(userWithoutPassword);
+    // Responder con datos de usuario (incluye rol_id)
+    res.json(user);
   } catch (err) {
     console.error("Error al iniciar sesión:", err);
     res.status(500).json({ error: "Error del servidor" });

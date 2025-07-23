@@ -1,8 +1,7 @@
-// controllers/authController.js
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
 
-// REGISTRO
+// Registro
 export const registerUser = async (req, res) => {
   try {
     const {
@@ -17,7 +16,7 @@ export const registerUser = async (req, res) => {
       `INSERT INTO usuarios 
       (email, cedula, rol_id, nombres, apellidos, celular, contrasena, fecha_nacimiento, edificio, departamento)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-      RETURNING id`,
+      RETURNING id, email, rol_id, nombres, apellidos`,
       [
         email, cedula, rol_id, nombres,
         apellidos, celular, hashedPassword,
@@ -25,19 +24,19 @@ export const registerUser = async (req, res) => {
       ]
     );
 
-    res.status(201).json({ id: result.rows[0].id });
+    res.status(201).json({ user: result.rows[0] });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al registrar usuario" });
   }
 };
 
-// LOGIN
+// Login
 export const loginUser = async (req, res) => {
   const { email, contrasena } = req.body;
 
   try {
-    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+    const result = await pool.query("SELECT id, email, rol_id, nombres, apellidos, celular, contrasena FROM usuarios WHERE email = $1", [email]);
 
     if (result.rows.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
 
