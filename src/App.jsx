@@ -1,17 +1,27 @@
-import { BrowserRouter } from "react-router-dom"; 
+// src/App.jsx
+import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { CarritoProvider } from "./context/CarritoContext"; // 👈
 import { AppRoutes } from "./routes/AppRoutes";
+import { useEffect } from "react";
+import { useAuth } from "./context/AuthContext";
+
+function AppContent() {
+  const { checkAuth } = useAuth();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  return <AppRoutes />;
+}
 
 function App() {
   return (
-    <AuthProvider>
-      <CarritoProvider> {/* 👈 AQUI */}
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </CarritoProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

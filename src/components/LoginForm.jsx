@@ -1,24 +1,32 @@
+// src/components/LoginForm.jsx
 import logo from "../assets/logo.png";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export const LoginForm = () => {
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = login(username, password);
-    if (user) {
-      if (user.role === "admin") navigate("/admin");
-      else if (user.role === "cajero") navigate("/cajero");
-      else if (user.role === "cliente") navigate("/cliente");
-    } else {
-      alert("Usuario o contraseña incorrectos");
+    setError("");
+
+    try {
+      const user = await login(email, password);
+      
+      if (user) {
+        // Redirigir según el rol
+        if (user.role === "admin") navigate("/admin");
+        else if (user.role === "cajero") navigate("/cajero");
+        else if (user.role === "cliente") navigate("/cliente");
+      }
+    } catch (err) {
+      setError(err.message || "Error al iniciar sesión");
     }
   };
 
@@ -35,15 +43,30 @@ export const LoginForm = () => {
           <span style={{ color: "var(--amarillo-dark)" }}>market</span>
         </h2>
 
+        {/* Mostrar errores */}
+        {error && (
+          <div className="alert alert-danger alert-dismissible fade show" role="alert">
+            <i className="bi bi-exclamation-triangle me-2"></i>
+            {error}
+            <button 
+              type="button" 
+              className="btn-close" 
+              onClick={() => setError("")}
+            ></button>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label">Usuario</label>
+            <label className="form-label">Email / Usuario</label>
             <input
               type="text"
               className="form-control"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Ingresa tu email o usuario"
               required
+              disabled={loading}
             />
           </div>
           <div className="mb-3">
@@ -53,13 +76,40 @@ export const LoginForm = () => {
               className="form-control"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Ingresa tu contraseña"
               required
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="btn btn-primary w-100">
-            Entrar
+          <button 
+            type="submit" 
+            className="btn btn-primary w-100"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                Iniciando sesión...
+              </>
+            ) : (
+              "Entrar"
+            )}
           </button>
         </form>
+
+        {/* Link para registro */}
+        <div className="text-center mt-3">
+          <p className="text-muted mb-0">
+            ¿No tienes cuenta?{' '}
+            <a 
+              href="/register" 
+              className="text-decoration-none fw-bold"
+              style={{ color: "var(--rojo)" }}
+            >
+              Regístrate aquí
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

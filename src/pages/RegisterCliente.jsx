@@ -151,35 +151,62 @@ export function RegisterCliente() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Validaciones finales
-    const nuevosErrores = {};
-    
-    Object.entries(formData).forEach(([campo, valor]) => {
-      if (campo === "terminos") {
-        if (!valor) nuevosErrores[campo] = "Debes aceptar los términos";
-        return;
-      }
-      if (!valor.trim()) {
-        nuevosErrores[campo] = "Campo requerido";
-      }
-    });
-
-    if (formData.contrasena !== formData.confirmarContrasena) {
-      nuevosErrores.confirmarContrasena = "Las contraseñas no coinciden";
-    }
-
-    if (Object.keys(nuevosErrores).length > 0) {
-      setErrores(nuevosErrores);
+  const nuevosErrores = {};
+  Object.entries(formData).forEach(([campo, valor]) => {
+    if (campo === "terminos") {
+      if (!valor) nuevosErrores[campo] = "Debes aceptar los términos";
       return;
     }
+    if (!valor.trim()) {
+      nuevosErrores[campo] = "Campo requerido";
+    }
+  });
 
-    // Simular registro exitoso
-    console.log("Datos registrados:", formData);
-    toast.success("🎉 ¡Cuenta registrada exitosamente!");
-  };
+  if (formData.contrasena !== formData.confirmarContrasena) {
+    nuevosErrores.confirmarContrasena = "Las contraseñas no coinciden";
+  }
+
+  if (Object.keys(nuevosErrores).length > 0) {
+    setErrores(nuevosErrores);
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:3001/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    if (res.ok) {
+      toast.success("🎉 ¡Cuenta registrada exitosamente!");
+      setFormData({
+        nombres: "",
+        apellidos: "",
+        usuario: "",
+        cedula: "",
+        celular: "",
+        contrasena: "",
+        confirmarContrasena: "",
+        fecha_nacimiento: "",
+        edificio: "",
+        departamento: "",
+        terminos: false,
+      });
+      setCurrentStep(1);
+    } else {
+      const error = await res.json();
+      toast.error(error.message || "Error al registrar");
+    }
+  } catch (err) {
+    console.error("Error de red:", err);
+    toast.error("Error de red al registrar");
+  }
+};
+
 
   const containerVariants = {
     hidden: { opacity: 0, y: 30 },

@@ -1,10 +1,13 @@
-// db.js
-import { Pool } from "pg";
+// backend/db.js
+const { Pool } = require("pg");
+require("dotenv").config();
 
-export const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "vendiscall",
-  password: "intesud", // cambia esto
-  port: 5432,
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+  database: process.env.DB_DATABASE,
 });
+
+module.exports = pool;
