@@ -40,7 +40,7 @@ export function Login() {
               <i className="bi bi-facebook"></i>
             </a>
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/andcherrez"
               target="_blank"
               rel="noopener noreferrer"
               className="text-decoration-none text-danger fs-4"
@@ -48,7 +48,7 @@ export function Login() {
               <i className="bi bi-instagram"></i>
             </a>
             <a
-              href="https://wa.me/593999999999"
+              href="https://wa.me/593958928862"
               target="_blank"
               rel="noopener noreferrer"
               className="text-decoration-none text-success fs-4"

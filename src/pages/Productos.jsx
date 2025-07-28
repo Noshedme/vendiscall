@@ -1,380 +1,240 @@
 // src/pages/Productos.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
-
-// Productos de prueba con imagen
-const productosData = [
-  {
-    id: 1,
-    codigo: "7894561230123",
-    nombre: "Aceite de Girasol",
-    precio: 3.25,
-    stock: 45,
-    categoria: "Despensa",
-    imagen: "bi-bag-fill",
-    estado: "disponible"
-  },
-  {
-    id: 2,
-    codigo: "1234567890456",
-    nombre: "Leche Entera",
-    precio: 1.85,
-    stock: 120,
-    categoria: "Lácteos",
-    imagen: "bi-cart3",
-    estado: "disponible"
-  },
-  {
-    id: 3,
-    codigo: "9876543210789",
-    nombre: "Arroz Blanco",
-    precio: 2.10,
-    stock: 80,
-    categoria: "Granos",
-    imagen: "bi-box2-fill",
-    estado: "disponible"
-  },
-  {
-    id: 4,
-    codigo: "5678901234567",
-    nombre: "Pan Integral",
-    precio: 2.50,
-    stock: 25,
-    categoria: "Panadería",
-    imagen: "bi-basket-fill",
-    estado: "disponible"
-  },
-  {
-    id: 5,
-    codigo: "3456789012345",
-    nombre: "Jabón Líquido",
-    precio: 4.75,
-    stock: 100,
-    categoria: "Limpieza",
-    imagen: "bi-droplet-fill",
-    estado: "stock_bajo"
-  },
-  {
-    id: 6,
-    codigo: "2345678901234",
-    nombre: "Yogurt Natural",
-    precio: 1.20,
-    stock: 0,
-    categoria: "Lácteos",
-    imagen: "bi-cup-straw",
-    estado: "agotado"
-  }
-];
+import { toast, ToastContainer } from "react-toastify";
+import { motion } from "framer-motion";
+import "react-toastify/dist/ReactToastify.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 export const Productos = () => {
-  const [productos, setProductos] = useState(productosData);
+  const [productos, setProductos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroCategoria, setFiltroCategoria] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("");
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [productoActual, setProductoActual] = useState({
+    id: null,
+    codigo: "",
+    nombre: "",
+    descripcion: "",
+    precio: "",
+    stock: "",
+    categoria: "",
+  });
 
-  const categorias = [...new Set(productos.map(p => p.categoria))];
+  useEffect(() => {
+    cargarProductos();
+  }, []);
+
+  const cargarProductos = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/productos");
+      const data = await res.json();
+      setProductos(data);
+    } catch (error) {
+      toast.error("Error al cargar productos");
+    }
+  };
 
   const productosFiltrados = useMemo(() => {
     return productos.filter((producto) => {
-      const matchBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                          producto.codigo.toLowerCase().includes(busqueda.toLowerCase());
-      const matchCategoria = filtroCategoria === "" || producto.categoria === filtroCategoria;
-      const matchEstado = filtroEstado === "" || producto.estado === filtroEstado;
-      
-      return matchBusqueda && matchCategoria && matchEstado;
+      return (
+        producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        producto.codigo.toLowerCase().includes(busqueda.toLowerCase())
+      );
     });
-  }, [busqueda, productos, filtroCategoria, filtroEstado]);
+  }, [busqueda, productos]);
 
-  const handleEliminar = (id) => {
-    if (confirm("¿Estás seguro de eliminar este producto?")) {
-      setProductos(productos.filter((p) => p.id !== id));
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProductoActual({ ...productoActual, [name]: value });
+  };
+
+ const handleGuardarProducto = async () => {
+  try {
+    const datosFormateados = {
+      ...productoActual,
+      precio: parseFloat(productoActual.precio),
+      stock: parseInt(productoActual.stock),
+    };
+
+    const url = modoEdicion
+      ? `http://localhost:3001/api/productos/${productoActual.id}`
+      : "http://localhost:3001/api/productos";
+    const metodo = modoEdicion ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method: metodo,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datosFormateados),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Error al guardar");
+
+    // Actualizar productos en lista
+    if (modoEdicion) {
+      setProductos((prev) => prev.map((p) => (p.id === data.id ? data : p)));
+      toast.success("Producto actualizado");
+    } else {
+      setProductos((prev) => [...prev, data]);
+      toast.success("Producto creado");
+    }
+
+    // Reset
+    setProductoActual({
+      id: null,
+      codigo: "",
+      nombre: "",
+      descripcion: "",
+      precio: "",
+      stock: "",
+      categoria: "",
+    });
+    setModoEdicion(false);
+  } catch (error) {
+    console.error("Error al guardar producto:", error);
+    toast.error(`Error al guardar producto: ${error.message}`);
+  }
+};
+
+  const handleEliminar = async (id) => {
+    if (confirm("¿Eliminar este producto?")) {
+      try {
+        const res = await fetch(`http://localhost:3001/api/productos/${id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error();
+        setProductos((prev) => prev.filter((p) => p.id !== id));
+        toast.info("Producto eliminado");
+      } catch {
+        toast.error("Error al eliminar");
+      }
     }
   };
 
-  const getEstadoBadge = (estado, stock) => {
-    if (estado === "agotado" || stock === 0) {
-      return <span className="badge bg-danger">Agotado</span>;
-    }
-    if (estado === "stock_bajo" || stock < 10) {
-      return <span className="badge bg-warning">Stock Bajo</span>;
-    }
-    return <span className="badge bg-success">Disponible</span>;
+  const iniciarEdicion = (producto) => {
+    setProductoActual(producto);
+    setModoEdicion(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  const getStockColor = (stock) => {
-    if (stock === 0) return "text-danger";
-    if (stock < 10) return "text-warning";
-    return "text-success";
-  };
-
-  // Estadísticas rápidas
-  const totalProductos = productos.length;
-  const productosDisponibles = productos.filter(p => p.stock > 0).length;
-  const productosAgotados = productos.filter(p => p.stock === 0).length;
-  const stockBajo = productos.filter(p => p.stock > 0 && p.stock < 10).length;
-  const valorInventario = productos.reduce((acc, p) => acc + (p.precio * p.stock), 0);
 
   return (
     <div className="d-flex flex-column min-vh-100">
       <Header />
-
+      <ToastContainer />
       <div className="container-fluid flex-grow-1">
         <div className="row h-100">
           <Sidebar />
-
           <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
-            {/* Header */}
-            <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-              <h1 className="h2 mb-0 text-danger fw-bold">
-                <i className="bi bi-box-seam me-2"></i>
-                Gestión de Productos
-              </h1>
-              <div className="btn-toolbar mb-2 mb-md-0">
-                <div className="btn-group me-2">
-                  <button className="btn btn-sm btn-outline-secondary">
-                    <i className="bi bi-download me-1"></i>
-                    Exportar
+            <motion.h1
+              className="h2 text-danger fw-bold mb-4"
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+            >
+              <i className="bi bi-box-seam me-2"></i>Gestión de Productos
+            </motion.h1>
+
+            {/* Formulario */}
+            <motion.div
+              className="card mb-4 p-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <h5 className="text-primary fw-bold">
+                {modoEdicion ? "Editar Producto" : "Nuevo Producto"}
+              </h5>
+              <div className="row g-2">
+                {[
+                  ["codigo", "Código"],
+                  ["nombre", "Nombre"],
+                  ["descripcion", "Descripción"],
+                  ["precio", "Precio"],
+                  ["stock", "Stock"],
+                  ["categoria", "Categoría"],
+                ].map(([name, placeholder]) => (
+                  <div className="col-md-2" key={name}>
+                    <input
+                      className="form-control"
+                      name={name}
+                      placeholder={placeholder}
+                      value={productoActual[name]}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                ))}
+                <div className="col-md-2">
+                  <button
+                    className="btn btn-success w-100"
+                    onClick={handleGuardarProducto}
+                  >
+                    {modoEdicion ? "Actualizar" : "Crear"}
                   </button>
-                  <button className="btn btn-sm btn-outline-secondary">
-                    <i className="bi bi-upload me-1"></i>
-                    Importar
-                  </button>
-                </div>
-                <button className="btn btn-primary">
-                  <i className="bi bi-plus-circle me-1"></i>
-                  Nuevo Producto
-                </button>
-              </div>
-            </div>
-
-            {/* Tarjetas de estadísticas */}
-            <div className="row mb-4">
-              <div className="col-xl-3 col-md-6 mb-3">
-                <div className="card border-left-primary shadow h-100 py-2">
-                  <div className="card-body">
-                    <div className="row no-gutters align-items-center">
-                      <div className="col mr-2">
-                        <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                          Total Productos
-                        </div>
-                        <div className="h5 mb-0 font-weight-bold text-gray-800">{totalProductos}</div>
-                      </div>
-                      <div className="col-auto">
-                        <i className="bi bi-box-seam fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
+            </motion.div>
 
-              <div className="col-xl-3 col-md-6 mb-3">
-                <div className="card border-left-success shadow h-100 py-2">
-                  <div className="card-body">
-                    <div className="row no-gutters align-items-center">
-                      <div className="col mr-2">
-                        <div className="text-xs font-weight-bold text-success text-uppercase mb-1">
-                          Disponibles
-                        </div>
-                        <div className="h5 mb-0 font-weight-bold text-gray-800">{productosDisponibles}</div>
-                      </div>
-                      <div className="col-auto">
-                        <i className="bi bi-check-circle fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-xl-3 col-md-6 mb-3">
-                <div className="card border-left-warning shadow h-100 py-2">
-                  <div className="card-body">
-                    <div className="row no-gutters align-items-center">
-                      <div className="col mr-2">
-                        <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                          Stock Bajo
-                        </div>
-                        <div className="h5 mb-0 font-weight-bold text-gray-800">{stockBajo}</div>
-                      </div>
-                      <div className="col-auto">
-                        <i className="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-xl-3 col-md-6 mb-3">
-                <div className="card border-left-info shadow h-100 py-2">
-                  <div className="card-body">
-                    <div className="row no-gutters align-items-center">
-                      <div className="col mr-2">
-                        <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
-                          Valor Inventario
-                        </div>
-                        <div className="h5 mb-0 font-weight-bold text-gray-800">${valorInventario.toFixed(2)}</div>
-                      </div>
-                      <div className="col-auto">
-                        <i className="bi bi-currency-dollar fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tabla de productos */}
+            {/* Tabla */}
             <div className="card shadow mb-4">
-              <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 className="m-0 font-weight-bold text-primary">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h6 className="m-0 fw-bold text-primary">
                   Inventario ({productosFiltrados.length} productos)
                 </h6>
-                <div className="d-flex align-items-center gap-3">
-                  {/* Buscador compacto */}
-                  <div className="d-flex align-items-center gap-2">
-                    <div className="input-group" style={{width: "250px"}}>
-                      <span className="input-group-text">
-                        <i className="bi bi-search"></i>
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        placeholder="Buscar producto..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                      />
-                    </div>
-                    
-                    {/* Filtros compactos */}
-                    <select
-                      className="form-select form-select-sm"
-                      value={filtroCategoria}
-                      onChange={(e) => setFiltroCategoria(e.target.value)}
-                      style={{width: "150px"}}
-                    >
-                      <option value="">Categoría</option>
-                      {categorias.map(categoria => (
-                        <option key={categoria} value={categoria}>{categoria}</option>
-                      ))}
-                    </select>
-                    
-                    <select
-                      className="form-select form-select-sm"
-                      value={filtroEstado}
-                      onChange={(e) => setFiltroEstado(e.target.value)}
-                      style={{width: "120px"}}
-                    >
-                      <option value="">Estado</option>
-                      <option value="disponible">Disponible</option>
-                      <option value="stock_bajo">Stock Bajo</option>
-                      <option value="agotado">Agotado</option>
-                    </select>
-                  </div>
-
-                  {/* Menú de opciones */}
-                  <div className="dropdown no-arrow">
-                    <a className="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown">
-                      <i className="bi bi-three-dots-vertical text-gray-400"></i>
-                    </a>
-                    <div className="dropdown-menu dropdown-menu-right shadow">
-                      <div className="dropdown-header">Acciones:</div>
-                      <a className="dropdown-item" href="#">Exportar todo</a>
-                      <a className="dropdown-item" href="#">Importar productos</a>
-                      <div className="dropdown-divider"></div>
-                      <a className="dropdown-item" href="#">Configuración</a>
-                    </div>
-                  </div>
-                </div>
+                <input
+                  type="text"
+                  className="form-control form-control-sm w-25"
+                  placeholder="Buscar..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                />
               </div>
-              <div className="card-body p-0">
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th width="5%">#</th>
-                        <th width="8%"></th>
-                        <th width="20%">Producto</th>
-                        <th width="15%">Categoría</th>
-                        <th width="15%">Código</th>
-                        <th width="10%">Precio</th>
-                        <th width="10%">Stock</th>
-                        <th width="10%">Estado</th>
-                        <th width="12%">Acciones</th>
+
+              <div className="table-responsive">
+                <table className="table table-hover mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Código</th>
+                      <th>Nombre</th>
+                      <th>Descripción</th>
+                      <th>Precio</th>
+                      <th>Stock</th>
+                      <th>Categoría</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productosFiltrados.map((producto, index) => (
+                      <tr key={producto.id}>
+                        <td>{index + 1}</td>
+                        <td>{producto.codigo}</td>
+                        <td>{producto.nombre}</td>
+                        <td>{producto.descripcion}</td>
+                        <td>${parseFloat(producto.precio).toFixed(2)}</td>
+                        <td>{producto.stock}</td>
+                        <td>{producto.categoria}</td>
+                        <td>
+                          <div className="btn-group">
+                            <button
+                              className="btn btn-sm btn-outline-warning"
+                              onClick={() => iniciarEdicion(producto)}
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleEliminar(producto.id)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {productosFiltrados.map((producto, index) => (
-                        <tr key={producto.id}>
-                          <td className="fw-bold text-muted">{index + 1}</td>
-                          <td>
-                            <div className="d-flex align-items-center justify-content-center bg-light rounded" style={{width: "45px", height: "45px"}}>
-                              <i className={`bi ${producto.imagen} fs-4 text-primary`}></i>
-                            </div>
-                          </td>
-                          <td>
-                            <div>
-                              <div className="fw-bold">{producto.nombre}</div>
-                              <div className="text-muted small">ID: {producto.id}</div>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="badge bg-info bg-opacity-10 text-info">
-                              {producto.categoria}
-                            </span>
-                          </td>
-                          <td>
-                            <code className="text-muted">{producto.codigo}</code>
-                          </td>
-                          <td className="fw-bold text-success">${producto.precio.toFixed(2)}</td>
-                          <td>
-                            <span className={`fw-bold ${getStockColor(producto.stock)}`}>
-                              {producto.stock}
-                            </span>
-                          </td>
-                          <td>
-                            {getEstadoBadge(producto.estado, producto.stock)}
-                          </td>
-                          <td>
-                            <div className="btn-group" role="group">
-                              <button
-                                className="btn btn-sm btn-outline-info"
-                                title="Ver detalles"
-                              >
-                                <i className="bi bi-eye"></i>
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-warning"
-                                title="Editar"
-                              >
-                                <i className="bi bi-pencil"></i>
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleEliminar(producto.id)}
-                                title="Eliminar"
-                              >
-                                <i className="bi bi-trash"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-
-              {productosFiltrados.length === 0 && (
-                <div className="text-center py-5">
-                  <i className="bi bi-box-seam fs-1 text-muted mb-3"></i>
-                  <h5 className="text-muted">No se encontraron productos</h5>
-                  <p className="text-muted">Intenta cambiar los filtros o agregar nuevos productos</p>
-                  <button className="btn btn-primary mt-2">
-                    <i className="bi bi-plus-circle me-1"></i>
-                    Agregar Producto
-                  </button>
-                </div>
-              )}
             </div>
           </main>
         </div>
