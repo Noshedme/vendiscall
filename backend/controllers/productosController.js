@@ -1,3 +1,4 @@
+//productosController.js en controllers en backend
 const pool = require("../db.js");
 
 const getProductos = async (req, res) => {

@@ -15,7 +15,8 @@ app.get("/", (req, res) => {
     endpoints: {
       register: "POST /api/register",
       login: "POST /api/login",
-      productos: "GET /api/productos"
+      productos: "GET /api/productos",
+      usuarios: "GET /api/usuarios"
     }
   });
 });
@@ -27,6 +28,10 @@ app.use("/api", authRoutes);
 // Importa el router de productos
 const productosRoutes = require("./routes/productosRoutes");
 app.use("/api/productos", productosRoutes);
+
+// Importa el router de usuarios
+const usuariosRoutes = require("./routes/usuariosRoutes");
+app.use("/api/usuarios", usuariosRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

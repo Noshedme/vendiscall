@@ -1,3 +1,4 @@
+//productosRoutes.js en routes en backend
 const express = require('express');
 const {
   getProductos,

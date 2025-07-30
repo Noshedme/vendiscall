@@ -10,4 +10,21 @@ const pool = new Pool({
   database: process.env.DB_DATABASE,
 });
 
-module.exports = pool;
+
+pool.on('connect', () => {
+  console.log('✅ Conectado a PostgreSQL');
+});
+
+pool.on('error', (err) => {
+  console.error('❌ Error en PostgreSQL:', err);
+});
+
+// Función para ejecutar queries
+const query = (text, params) => {
+  return pool.query(text, params);
+};
+
+module.exports = {
+  query,
+  pool
+};
