@@ -37,13 +37,11 @@ export const LoginForm = () => {
           <img src={logo} alt="Logo tienda" style={{ maxWidth: "160px", borderRadius: "30%"}} />
         </div>
 
-        {/* Título personalizado */}
         <h2 className="text-center mb-4" style={{ fontWeight: "700", fontSize: "1.8rem" }}>
           <span style={{ color: "var(--rojo)" }}>Vendis</span>
           <span style={{ color: "var(--amarillo-dark)" }}>market</span>
         </h2>
 
-        {/* Mostrar errores */}
         {error && (
           <div className="alert alert-danger alert-dismissible fade show" role="alert">
             <i className="bi bi-exclamation-triangle me-2"></i>
@@ -80,7 +78,16 @@ export const LoginForm = () => {
               required
               disabled={loading}
             />
+            <div className="text-end mt-1">
+              <a 
+                href="/recuperar" 
+                className="text-decoration-none small text-danger"
+              >
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
           </div>
+
           <button 
             type="submit" 
             className="btn btn-primary w-100"
@@ -97,7 +104,6 @@ export const LoginForm = () => {
           </button>
         </form>
 
-        {/* Link para registro */}
         <div className="text-center mt-3">
           <p className="text-muted mb-0">
             ¿No tienes cuenta?{' '}

@@ -1,25 +1,31 @@
+// src/routes/AppRoutes.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// Páginas comunes
 import { Login } from "../pages/Login";
-import { DashboardAdmin } from "../pages/DashboardAdmin";
+import { RegisterCliente } from "../pages/RegisterCliente";
+import { RecuperarContrasena } from "../pages/RecuperarContrasena";
+import { ReestablecerContrasena } from "../pages/ReestablecerContrasena";
 
+// Páginas administrador
+import { DashboardAdmin } from "../pages/DashboardAdmin";
+import { Usuarios } from "../pages/Usuarios";
+import { Productos } from "../pages/Productos";
+import { Reportes } from "../pages/Reportes";
+
+// Páginas cajero
 import { DashboardCajero } from "../pages/DashboardCajero";
 import { CuentaCajero } from "../pages/CuentaCajero";
 import { BuscarProductoCajero } from "../pages/BuscarProductoCajero";
 import { HistorialVentasCajero } from "../pages/HistorialVentasCajero";
 import { CajaCajero } from "../pages/CajaCajero";
 
-
+// Páginas cliente
 import { DashboardCliente } from "../pages/DashboardCliente";
 import { CuentaCliente } from "../pages/CuentaCliente";
 import { CategoriasProductos } from "../pages/CategoriasProductos";
 import { CarritoCliente } from "../pages/CarritoCliente";
-
-import { Usuarios } from "../pages/Usuarios";
-import { RegisterCliente } from "../pages/RegisterCliente"
-import { Productos } from "../pages/Productos";
-import { Reportes } from "../pages/Reportes";
 
 export const AppRoutes = () => {
   const { user } = useAuth();
@@ -34,6 +40,8 @@ export const AppRoutes = () => {
     <Routes>
       {/* Página de inicio de sesión */}
       <Route path="/" element={<Login />} />
+      <Route path="/register" element={<RegisterCliente />} />
+      <Route path="/recuperar" element={<RecuperarContrasena />} />
 
       {/* Rutas para administrador */}
       <Route
@@ -78,6 +86,38 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/cajero/cuenta"
+        element={
+          <ProtectedRoute role="cajero">
+            <CuentaCajero />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cajero/buscar"
+        element={
+          <ProtectedRoute role="cajero">
+            <BuscarProductoCajero />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cajero/historial"
+        element={
+          <ProtectedRoute role="cajero">
+            <HistorialVentasCajero />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cajero/caja"
+        element={
+          <ProtectedRoute role="cajero">
+            <CajaCajero />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Rutas para cliente */}
       <Route
@@ -112,47 +152,12 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
-  path="/cajero/cuenta"
-  element={
-    <ProtectedRoute role="cajero">
-      <CuentaCajero />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/cajero/buscar"
-  element={
-    <ProtectedRoute role="cajero">
-      <BuscarProductoCajero />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/cajero/historial"
-  element={
-    <ProtectedRoute role="cajero">
-      <HistorialVentasCajero />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/cajero/caja"
-  element={
-    <ProtectedRoute role="cajero">
-      <CajaCajero />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/register" 
-  element={<RegisterCliente />} />
-
+        path="/reestablecer"
+        element={
+          <ReestablecerContrasena />
+        }
+        />
     </Routes>
   );
 };

@@ -18,7 +18,6 @@ router.post("/register", async (req, res) => {
       departamento,
     } = req.body;
 
-    // Verificar si ya existe el usuario (por cédula o email)
     const userExist = await pool.query(
       "SELECT * FROM usuarios WHERE cedula = $1 OR email = $2",
       [cedula, usuario]
@@ -28,10 +27,8 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Cédula o usuario ya registrados" });
     }
 
-    // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(contrasena, 10);
 
-    // Insertar nuevo usuario con rol 3 (cliente)
     const nuevo = await pool.query(
       `INSERT INTO usuarios (
         email, cedula, rol_id, nombres, apellidos, celular,
@@ -70,7 +67,6 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Email y contraseña son requeridos" });
     }
 
-    // Buscar usuario por email, seleccionando campos importantes (incluyendo rol_id)
     const result = await pool.query(
       "SELECT id, email, rol_id, nombres, apellidos, celular, contrasena FROM usuarios WHERE email = $1", 
       [email]
@@ -81,18 +77,13 @@ router.post("/login", async (req, res) => {
     }
 
     const user = result.rows[0];
-
-    // Verificar contraseña con bcrypt
     const validPassword = await bcrypt.compare(contrasena, user.contrasena);
 
     if (!validPassword) {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
 
-    // No enviar la contraseña al frontend
     delete user.contrasena;
-
-    // Responder con datos de usuario (incluye rol_id)
     res.json(user);
   } catch (err) {
     console.error("Error al iniciar sesión:", err);
@@ -100,4 +91,52 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Recuperar contraseña (simulado)
+router.post("/recuperar", async (req, res) => {
+  const { email } = req.body;
+  try {
+    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Correo no registrado" });
+    }
+
+    console.log("🔐 Enlace de recuperación enviado a:", email);
+
+    res.json({
+      message: `Hemos enviado un enlace de recuperación al correo: ${email} (simulado en consola)`
+    });
+  } catch (error) {
+    console.error("Error en recuperación:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// Reestablecer contraseña
+router.post("/reestablecer", async (req, res) => {
+  const { email, nueva } = req.body;
+
+  try {
+    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Correo no encontrado" });
+    }
+
+    const hashedPassword = await bcrypt.hash(nueva, 10);
+
+    await pool.query(
+      "UPDATE usuarios SET contrasena = $1 WHERE email = $2",
+      [hashedPassword, email]
+    );
+
+    console.log("🔐 Contraseña actualizada para:", email);
+    res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar contraseña:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// ⚠️ ¡IMPORTANTE! Exporta al final
 module.exports = router;
