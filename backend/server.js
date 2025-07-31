@@ -1,3 +1,4 @@
+//server.js actualizado
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -16,7 +17,8 @@ app.get("/", (req, res) => {
       register: "POST /api/register",
       login: "POST /api/login",
       productos: "GET /api/productos",
-      usuarios: "GET /api/usuarios"
+      usuarios: "GET /api/usuarios",
+      reclamos: "GET /api/reclamos"
     }
   });
 });
@@ -32,6 +34,10 @@ app.use("/api/productos", productosRoutes);
 // Importa el router de usuarios
 const usuariosRoutes = require("./routes/usuariosRoutes");
 app.use("/api/usuarios", usuariosRoutes);
+
+// Importa el router de reclamos
+const reclamosRoutes = require("./routes/reclamosRoutes");
+app.use("/api/reclamos", reclamosRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
