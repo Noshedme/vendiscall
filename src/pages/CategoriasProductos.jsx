@@ -8,25 +8,36 @@ import { FaCartPlus, FaTag } from "react-icons/fa";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-const productos = [
-  { id: 1, nombre: "Aceite de Girasol", precio: 3.25, categoria: "Aceites", imagen: "https://via.placeholder.com/80" },
-  { id: 2, nombre: "Arroz Integral", precio: 1.95, categoria: "Cereales", imagen: "https://via.placeholder.com/80" },
-  { id: 3, nombre: "Leche Deslactosada", precio: 2.5, categoria: "Lácteos", imagen: "https://via.placeholder.com/80" },
-  { id: 4, nombre: "Cerveza Artesanal", precio: 1.75, categoria: "Cervezas", imagen: "https://via.placeholder.com/80" },
-  { id: 5, nombre: "Galletas Choco", precio: 0.99, categoria: "Snacks", imagen: "https://via.placeholder.com/80" },
-  // ...más productos
-];
-
-const categorias = ["Todos", "Aceites", "Cereales", "Lácteos", "Cervezas", "Snacks"];
-
 export function CategoriasProductos() {
   const { añadirAlCarrito } = useCarrito();
+  const [productos, setProductos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
+  const [categorias, setCategorias] = useState(["Todos"]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     AOS.init({ duration: 600 });
+    cargarProductos();
   }, []);
+
+  const cargarProductos = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/api/productos");
+      const data = await response.json();
+      setProductos(data);
+      
+      // Extraer categorías únicas
+      const categoriasUnicas = ["Todos", ...new Set(data.map(p => p.categoria))];
+      setCategorias(categoriasUnicas);
+      
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+      toast.error("Error al cargar productos");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAñadir = (producto) => {
     añadirAlCarrito(producto);
@@ -42,6 +53,27 @@ export function CategoriasProductos() {
       .includes(busqueda.toLowerCase());
     return coincideCategoria && coincideBusqueda;
   });
+
+  if (loading) {
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        <Header />
+        <div className="container-fluid flex-grow-1">
+          <div className="row h-100">
+            <Sidebar />
+            <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
+              <div className="text-center">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Cargando...</span>
+                </div>
+                <p className="mt-2">Cargando productos...</p>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="d-flex flex-column min-vh-100">
@@ -110,7 +142,7 @@ export function CategoriasProductos() {
                   >
                     <div className="d-flex align-items-center">
                       <img
-                        src={producto.imagen}
+                        src={producto.imagen || "https://via.placeholder.com/60"}
                         alt={producto.nombre}
                         className="rounded me-3"
                         style={{
@@ -125,15 +157,20 @@ export function CategoriasProductos() {
                         </h5>
                         <p className="mb-0 text-muted">
                           <i className="bi bi-cash-coin me-1"></i>$
-                          {producto.precio.toFixed(2)}
+                          {parseFloat(producto.precio).toFixed(2)}
                         </p>
+                        <small className="text-muted">
+                          {producto.categoria} • Stock: {producto.stock}
+                        </small>
                       </div>
                     </div>
                     <button
                       className="btn btn-danger btn-sm"
                       onClick={() => handleAñadir(producto)}
+                      disabled={producto.stock === 0}
                     >
-                      <FaCartPlus className="me-1" /> Añadir
+                      <FaCartPlus className="me-1" /> 
+                      {producto.stock === 0 ? "Sin stock" : "Añadir"}
                     </button>
                   </motion.div>
                 ))}

@@ -2,13 +2,10 @@ import React, { useState, useRef } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
 import { FaUserCircle, FaEdit, FaSave, FaTimes, FaUpload } from "react-icons/fa";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { toast, ToastContainer } from "react-toastify";
 import { motion } from "framer-motion";
 import "react-toastify/dist/ReactToastify.css";
 import classNames from "classnames";
-
-const COLORS = ["#c62828", "#fbc02d", "#ffeb3b", "#790606"];
 
 export function CuentaCliente() {
   const [cliente, setCliente] = useState({
@@ -64,20 +61,16 @@ export function CuentaCliente() {
     }
   };
 
-  const dataChart = [
-    { name: "Nombre", value: cliente.nombre ? 1 : 0 },
-    { name: "Email", value: cliente.email ? 1 : 0 },
-    { name: "Teléfono", value: cliente.telefono ? 1 : 0 },
-    { name: "Dirección", value: cliente.direccion ? 1 : 0 },
-  ];
-
   return (
     <div className="d-flex flex-column min-vh-100">
       <Header />
       <div className="container-fluid flex-grow-1">
         <div className="row">
           <Sidebar />
-          <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
+          <main
+            className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3"
+            style={{ paddingBottom: "80px" }} // para que no quede pegado al footer
+          >
             <div className="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
               <h2 className="text-primary fw-bold mb-0">
                 <FaUserCircle className="me-2" />
@@ -195,52 +188,15 @@ export function CuentaCliente() {
                   </div>
                 </motion.div>
               </div>
-
-              {/* Gráfico */}
-              <div className="col-lg-5">
-                <motion.div
-                  className="card shadow-sm h-100"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="card-header bg-light">
-                    <h5 className="mb-0">Estado del Perfil</h5>
-                  </div>
-                  <div className="card-body">
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={dataChart}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={70}
-                          dataKey="value"
-                        >
-                          {dataChart.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <p className="text-muted small text-center mt-3">
-                      Campos completos del perfil
-                    </p>
-                  </div>
-                </motion.div>
-              </div>
             </div>
           </main>
         </div>
       </div>
 
       <footer className="bg-danger text-white py-2 mt-auto">
-        <div className="text-center">
+        <div className="text-center px-3">
           <small>
-            Vendismarket S.A.S. (local) VendisCall — Av. González Suárez N32-17,
-            Edif. Cc la Frutería Pb Local 3, Quito; Pichincha.
+            Vendismarket S.A.S. (local) VendisCall — Av. González Suárez N32-17, Edif. Cc la Frutería Pb Local 3, Quito; Pichincha.
           </small>
         </div>
       </footer>

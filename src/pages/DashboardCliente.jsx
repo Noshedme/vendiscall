@@ -106,6 +106,27 @@ export const DashboardCliente = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Nueva Card Reclamos */}
+              <div className="col-sm-6 col-lg-4 col-xl-3">
+                <div className="card h-100 shadow-sm card-hover">
+                  <div className="card-body d-flex flex-column">
+                    <div className="text-center mb-3">
+                      <i className="bi bi-chat-dots fs-1 text-primary"></i>
+                    </div>
+                    <h5 className="card-title text-center">Reclamos</h5>
+                    <p className="card-text text-center flex-grow-1">
+                      Envía tus reclamos o sugerencias.
+                    </p>
+                    <button
+                      className="btn btn-primary mt-auto"
+                      onClick={() => navigate("/cliente/reclamos")}
+                    >
+                      Ir a Reclamos
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Sección adicional para llenar espacio */}

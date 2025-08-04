@@ -26,6 +26,7 @@ import { DashboardCliente } from "../pages/DashboardCliente";
 import { CuentaCliente } from "../pages/CuentaCliente";
 import { CategoriasProductos } from "../pages/CategoriasProductos";
 import { CarritoCliente } from "../pages/CarritoCliente";
+import { FormularioReclamos } from "../pages/FormularioReclamos";
 
 export const AppRoutes = () => {
   const { user } = useAuth();
@@ -42,6 +43,7 @@ export const AppRoutes = () => {
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<RegisterCliente />} />
       <Route path="/recuperar" element={<RecuperarContrasena />} />
+      <Route path="/reestablecer" element={<ReestablecerContrasena />} />
 
       {/* Rutas para administrador */}
       <Route
@@ -153,11 +155,13 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/reestablecer"
+        path="/cliente/reclamos"
         element={
-          <ReestablecerContrasena />
+          <ProtectedRoute role="cliente">
+            <FormularioReclamos />
+          </ProtectedRoute>
         }
-        />
+      />
     </Routes>
   );
 };

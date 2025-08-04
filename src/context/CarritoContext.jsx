@@ -1,3 +1,4 @@
+//CarritoContext.js en context en front
 import { createContext, useContext, useState } from "react";
 
 const CarritoContext = createContext();

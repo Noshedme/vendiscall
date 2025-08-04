@@ -1,20 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
-import { productos } from "../data/productos";
+// ❌ ELIMINA: import { productos } from "../data/productos";
 import { FaSearch, FaBoxOpen, FaChevronDown, FaChevronUp, FaPlus } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { toast } from "react-toastify";
 
 export function BuscarProductoCajero() {
+  const [productos, setProductos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
-  const [filtrados, setFiltrados] = useState(productos);
+  const [filtrados, setFiltrados] = useState([]);
   const [expandido, setExpandido] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     AOS.init({ duration: 500 });
+    cargarProductos();
   }, []);
+
+  const cargarProductos = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/api/productos");
+      const data = await response.json();
+      setProductos(data);
+      setFiltrados(data);
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+      toast.error("Error al cargar productos");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const texto = busqueda.toLowerCase();
@@ -26,7 +44,7 @@ export function BuscarProductoCajero() {
     setFiltrados(resultado);
     // Cerrar todos los desplegables al buscar
     setExpandido(null);
-  }, [busqueda]);
+  }, [busqueda, productos]);
 
   const toggleExpansion = (id) => {
     setExpandido(expandido === id ? null : id);
@@ -43,6 +61,27 @@ export function BuscarProductoCajero() {
     if (stock <= 20) return "bg-warning";
     return "bg-success";
   };
+
+  if (loading) {
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        <Header />
+        <div className="container-fluid flex-grow-1">
+          <div className="row">
+            <Sidebar />
+            <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+              <div className="text-center">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Cargando...</span>
+                </div>
+                <p className="mt-2">Cargando productos...</p>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="d-flex flex-column min-vh-100">
@@ -106,7 +145,7 @@ export function BuscarProductoCajero() {
                             Stock: {producto.stock}
                           </span>
                           <span className="text-primary fw-bold">
-                            ${producto.precio.toFixed(2)}
+                            ${parseFloat(producto.precio).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -119,6 +158,7 @@ export function BuscarProductoCajero() {
                         onClick={(e) => {
                           e.stopPropagation();
                           // Aquí iría la lógica para añadir a venta
+                          toast.success(`${producto.nombre} seleccionado para venta`);
                         }}
                       >
                         <FaPlus className="me-1" />
@@ -173,13 +213,19 @@ export function BuscarProductoCajero() {
                               <div className="bg-light rounded p-3 text-center">
                                 <h6 className="text-muted mb-1">Precio Unitario</h6>
                                 <span className="fs-4 fw-bold text-success">
-                                  ${producto.precio.toFixed(2)}
+                                  ${parseFloat(producto.precio).toFixed(2)}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          
-
+                          <div className="row mt-3">
+                            <div className="col-12">
+                              <div className="bg-light rounded p-3">
+                                <h6 className="text-muted mb-1">Descripción</h6>
+                                <p className="text-dark mb-0">{producto.descripcion}</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </motion.div>
                     )}
