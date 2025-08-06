@@ -1,15 +1,16 @@
+// CategoriasProductos.jsx - Versión mejorada
 import React, { useEffect, useState } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
 import { useCarrito } from "../context/CarritoContext";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { FaCartPlus, FaTag } from "react-icons/fa";
+import { FaCartPlus, FaTag, FaMinus, FaPlus } from "react-icons/fa";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
 export function CategoriasProductos() {
-  const { añadirAlCarrito } = useCarrito();
+  const { añadirAlCarrito, carrito } = useCarrito();
   const [productos, setProductos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
@@ -25,10 +26,13 @@ export function CategoriasProductos() {
     try {
       const response = await fetch("http://localhost:3001/api/productos");
       const data = await response.json();
-      setProductos(data);
       
-      // Extraer categorías únicas
-      const categoriasUnicas = ["Todos", ...new Set(data.map(p => p.categoria))];
+      // Filtrar solo productos con stock > 0
+      const productosConStock = data.filter(p => p.stock > 0);
+      setProductos(productosConStock);
+      
+      // Extraer categorías únicas solo de productos con stock
+      const categoriasUnicas = ["Todos", ...new Set(productosConStock.map(p => p.categoria))];
       setCategorias(categoriasUnicas);
       
     } catch (error) {
@@ -40,6 +44,16 @@ export function CategoriasProductos() {
   };
 
   const handleAñadir = (producto) => {
+    // Verificar si el producto ya está en el carrito
+    const productoEnCarrito = carrito.find(item => item.id === producto.id);
+    const cantidadEnCarrito = productoEnCarrito ? productoEnCarrito.cantidad : 0;
+    
+    // Verificar si hay suficiente stock
+    if (cantidadEnCarrito >= producto.stock) {
+      toast.warning(`No hay más stock disponible de "${producto.nombre}"`);
+      return;
+    }
+    
     añadirAlCarrito(producto);
     toast.success(`"${producto.nombre}" añadido al carrito 🛒`);
   };
@@ -53,6 +67,12 @@ export function CategoriasProductos() {
       .includes(busqueda.toLowerCase());
     return coincideCategoria && coincideBusqueda;
   });
+
+  // Calcular cantidad en carrito para cada producto
+  const getCantidadEnCarrito = (productoId) => {
+    const item = carrito.find(p => p.id === productoId);
+    return item ? item.cantidad : 0;
+  };
 
   if (loading) {
     return (
@@ -81,20 +101,23 @@ export function CategoriasProductos() {
 
       <div className="container-fluid flex-grow-1">
         <div className="row h-100">
-          {/* Sidebar dinámico */}
           <Sidebar />
 
-          {/* Contenido principal */}
           <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
-            {/* Título */}
-            <motion.h2
-              className="fw-bold text-danger mb-4 d-flex align-items-center"
+            {/* Título con contador del carrito */}
+            <motion.div
+              className="d-flex justify-content-between align-items-center mb-4"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <FaTag className="me-2" />
-              Productos disponibles
-            </motion.h2>
+              <h2 className="fw-bold text-danger mb-0 d-flex align-items-center">
+                <FaTag className="me-2" />
+                Productos disponibles
+              </h2>
+              <div className="badge bg-success fs-6">
+                {carrito.length} productos en carrito
+              </div>
+            </motion.div>
 
             {/* Barra de búsqueda */}
             <div className="mb-3">
@@ -129,56 +152,91 @@ export function CategoriasProductos() {
               ))}
             </div>
 
+            {/* Contador de resultados */}
+            <div className="mb-3">
+              <small className="text-muted">
+                Mostrando {productosFiltrados.length} productos
+                {categoriaSeleccionada !== "Todos" && ` en "${categoriaSeleccionada}"`}
+              </small>
+            </div>
+
             {/* Lista de productos */}
             {productosFiltrados.length > 0 ? (
-              <div className="list-group">
-                {productosFiltrados.map((producto) => (
-                  <motion.div
-                    key={producto.id}
-                    className="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
-                    data-aos="fade-up"
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="d-flex align-items-center">
-                      <img
-                        src={producto.imagen || "https://via.placeholder.com/60"}
-                        alt={producto.nombre}
-                        className="rounded me-3"
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                          objectFit: "cover"
-                        }}
-                      />
-                      <div>
-                        <h5 className="mb-1 fw-semibold text-dark">
-                          {producto.nombre}
-                        </h5>
-                        <p className="mb-0 text-muted">
-                          <i className="bi bi-cash-coin me-1"></i>$
-                          {parseFloat(producto.precio).toFixed(2)}
-                        </p>
-                        <small className="text-muted">
-                          {producto.categoria} • Stock: {producto.stock}
-                        </small>
-                      </div>
+              <div className="row g-3">
+                {productosFiltrados.map((producto) => {
+                  const cantidadEnCarrito = getCantidadEnCarrito(producto.id);
+                  const stockDisponible = producto.stock - cantidadEnCarrito;
+                  
+                  return (
+                    <div key={producto.id} className="col-md-6 col-lg-4">
+                      <motion.div
+                        className="card h-100 shadow-sm border-0"
+                        data-aos="fade-up"
+                        whileHover={{ y: -5 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="position-relative">
+                          <img
+                            src={producto.imagen || "https://via.placeholder.com/300x200"}
+                            alt={producto.nombre}
+                            className="card-img-top"
+                            style={{ height: "200px", objectFit: "cover" }}
+                          />
+                          {cantidadEnCarrito > 0 && (
+                            <span className="position-absolute top-0 end-0 badge bg-success m-2">
+                              {cantidadEnCarrito} en carrito
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="card-body d-flex flex-column">
+                          <h5 className="card-title text-dark fw-semibold">
+                            {producto.nombre}
+                          </h5>
+                          <p className="card-text text-muted small flex-grow-1">
+                            {producto.descripcion}
+                          </p>
+                          
+                          <div className="mb-2">
+                            <span className="badge bg-primary me-2">{producto.categoria}</span>
+                            <span className={`badge ${stockDisponible <= 5 ? 'bg-warning' : 'bg-info'}`}>
+                              Stock: {stockDisponible}
+                            </span>
+                          </div>
+                          
+                          <div className="d-flex justify-content-between align-items-center mt-auto">
+                            <h4 className="mb-0 text-success fw-bold">
+                              ${parseFloat(producto.precio).toFixed(2)}
+                            </h4>
+                            <button
+                              className={`btn ${stockDisponible > 0 ? 'btn-danger' : 'btn-secondary'} btn-sm`}
+                              onClick={() => handleAñadir(producto)}
+                              disabled={stockDisponible === 0}
+                            >
+                              <FaCartPlus className="me-1" />
+                              {stockDisponible === 0 ? "Sin stock" : "Añadir"}
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
                     </div>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleAñadir(producto)}
-                      disabled={producto.stock === 0}
-                    >
-                      <FaCartPlus className="me-1" /> 
-                      {producto.stock === 0 ? "Sin stock" : "Añadir"}
-                    </button>
-                  </motion.div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <div className="alert alert-warning text-center mt-4">
-                No se encontraron productos.
-              </div>
+              <motion.div
+                className="text-center py-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <FaTag className="fs-1 text-muted mb-3" />
+                <h4 className="text-muted">No se encontraron productos</h4>
+                <p className="text-muted">
+                  {categoriaSeleccionada !== "Todos" 
+                    ? `No hay productos en la categoría "${categoriaSeleccionada}"` 
+                    : "Intenta con otros términos de búsqueda"}
+                </p>
+              </motion.div>
             )}
           </main>
         </div>
