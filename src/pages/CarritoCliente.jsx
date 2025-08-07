@@ -1,275 +1,396 @@
-//CarritoCliente.jsx - Versión mejorada
-import React, { useState } from "react";
+// src/pages/CarritoCliente.jsx
+import React, { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
-import { useCarrito } from "../context/CarritoContext";
+import { 
+  FaShoppingCart, 
+  FaTrash, 
+  FaPlus, 
+  FaMinus, 
+  FaEdit, 
+  FaSave, 
+  FaTimes,
+  FaShoppingBag,
+  FaArrowLeft,
+  FaCreditCard
+} from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-toastify";
-import { FaTrash, FaShoppingBag, FaShoppingCart, FaMinus, FaPlus, FaCreditCard } from "react-icons/fa";
+import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import "react-toastify/dist/ReactToastify.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-export function CarritoCliente() {
-  const { carrito, eliminarDelCarrito, vaciarCarrito, actualizarCantidad } = useCarrito();
-  const [procesandoPago, setProcesandoPago] = useState(false);
+export const CarritoCliente = () => {
+  const [carrito, setCarrito] = useState([]);
+  const [editandoCantidad, setEditandoCantidad] = useState(null);
+  const [cantidadTemp, setCantidadTemp] = useState("");
+  const navigate = useNavigate();
 
-  const total = carrito.reduce(
-    (suma, producto) => suma + producto.precio * producto.cantidad,
-    0
-  );
+  useEffect(() => {
+    cargarCarrito();
+  }, []);
 
-  const handleEliminar = (id) => {
-    eliminarDelCarrito(id);
-    toast.info("Producto eliminado del carrito 🗑️");
+  const cargarCarrito = () => {
+    const carritoGuardado = localStorage.getItem("carrito");
+    if (carritoGuardado) {
+      setCarrito(JSON.parse(carritoGuardado));
+    }
   };
 
-  const handleVaciar = () => {
+  const guardarCarrito = (nuevoCarrito) => {
+    localStorage.setItem("carrito", JSON.stringify(nuevoCarrito));
+    setCarrito(nuevoCarrito);
+  };
+
+  const actualizarCantidad = (productId, nuevaCantidad) => {
+    if (nuevaCantidad < 1) {
+      eliminarProducto(productId);
+      return;
+    }
+
+    const productoEnCarrito = carrito.find(item => item.id === productId);
+    
+    if (nuevaCantidad > productoEnCarrito.stock) {
+      toast.warning(`Solo hay ${productoEnCarrito.stock} unidades disponibles`);
+      return;
+    }
+
+    const carritoActualizado = carrito.map(item =>
+      item.id === productId
+        ? { ...item, cantidad: nuevaCantidad }
+        : item
+    );
+
+    guardarCarrito(carritoActualizado);
+    toast.success("Cantidad actualizada");
+  };
+
+  const eliminarProducto = (productId) => {
+    const producto = carrito.find(item => item.id === productId);
+    const carritoActualizado = carrito.filter(item => item.id !== productId);
+    
+    guardarCarrito(carritoActualizado);
+    toast.info(`${producto.nombre} eliminado del carrito`);
+  };
+
+  const iniciarEdicionCantidad = (productId, cantidadActual) => {
+    setEditandoCantidad(productId);
+    setCantidadTemp(cantidadActual.toString());
+  };
+
+  const guardarCantidadEditada = (productId) => {
+    const nuevaCantidad = parseInt(cantidadTemp);
+    
+    if (isNaN(nuevaCantidad) || nuevaCantidad < 1) {
+      toast.error("La cantidad debe ser un número válido mayor a 0");
+      return;
+    }
+
+    actualizarCantidad(productId, nuevaCantidad);
+    setEditandoCantidad(null);
+    setCantidadTemp("");
+  };
+
+  const cancelarEdicion = () => {
+    setEditandoCantidad(null);
+    setCantidadTemp("");
+  };
+
+  const vaciarCarrito = () => {
     if (window.confirm("¿Estás seguro de que quieres vaciar el carrito?")) {
-      vaciarCarrito();
-      toast.warn("Carrito vaciado 🛒");
+      guardarCarrito([]);
+      toast.info("Carrito vaciado");
     }
   };
 
-  const handleCantidadChange = (id, nuevaCantidad) => {
-    if (nuevaCantidad < 1) return;
-    
-    // Verificar stock disponible
-    const producto = carrito.find(item => item.id === id);
-    if (nuevaCantidad > producto.stock) {
-      toast.warning(`Solo hay ${producto.stock} unidades disponibles`);
-      return;
-    }
-    
-    actualizarCantidad(id, nuevaCantidad);
+  const calcularSubtotal = () => {
+    return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
   };
 
-  const handleFinalizarCompra = async () => {
+  const calcularIVA = () => {
+    return calcularSubtotal() * 0.12; // IVA del 12%
+  };
+
+  const calcularTotal = () => {
+    return calcularSubtotal() + calcularIVA();
+  };
+
+  const procederAlPago = () => {
     if (carrito.length === 0) {
-      toast.warning("Tu carrito está vacío");
+      toast.warning("El carrito está vacío");
       return;
     }
-
-    setProcesandoPago(true);
     
-    try {
-      // Simular procesamiento de pago
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Aquí podrías agregar la lógica para:
-      // 1. Crear la orden en la base de datos
-      // 2. Actualizar el stock de productos
-      // 3. Procesar el pago
-      
-      toast.success("¡Compra realizada con éxito! 🎉");
-      vaciarCarrito();
-    } catch (error) {
-      toast.error("Error al procesar la compra");
-    } finally {
-      setProcesandoPago(false);
-    }
+    // Aquí iría la navegación al formulario de pago
+    toast.info("Redirigiendo al formulario de pago...");
+    navigate("/cliente/pago")
   };
+
+  const continuarComprando = () => {
+    navigate("/cliente/categorias");
+  };
+
+  if (carrito.length === 0) {
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        <Header />
+        <div className="container-fluid flex-grow-1">
+          <div className="row">
+            <Sidebar />
+            <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+              <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
+                <h2 className="text-primary fw-bold mb-0">
+                  <FaShoppingCart className="me-2" />
+                  Mi Carrito
+                </h2>
+              </div>
+
+              <motion.div
+                className="text-center py-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <FaShoppingBag className="fs-1 text-muted mb-4" />
+                <h3 className="text-muted mb-3">Tu carrito está vacío</h3>
+                <p className="text-muted mb-4">
+                  ¡Explora nuestros productos y encuentra lo que necesitas!
+                </p>
+                <button
+                  className="btn btn-primary btn-lg"
+                  onClick={continuarComprando}
+                >
+                  <FaArrowLeft className="me-2" />
+                  Continuar comprando
+                </button>
+              </motion.div>
+            </main>
+          </div>
+        </div>
+        <ToastContainer />
+      </div>
+    );
+  }
 
   return (
     <div className="d-flex flex-column min-vh-100">
       <Header />
-
+      <ToastContainer />
       <div className="container-fluid flex-grow-1">
-        <div className="row h-100">
+        <div className="row">
           <Sidebar />
-
-          <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
-            {/* Título */}
-            <motion.div
-              className="d-flex justify-content-between align-items-center mb-4"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <h2 className="fw-bold text-danger mb-0 d-flex align-items-center">
-                <FaShoppingBag className="me-2" />
+          <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
+              <h2 className="text-primary fw-bold mb-0">
+                <FaShoppingCart className="me-2" />
                 Mi Carrito
               </h2>
-              <span className="badge bg-primary fs-6">
-                {carrito.length} productos
-              </span>
-            </motion.div>
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={continuarComprando}
+                >
+                  <FaArrowLeft className="me-2" />
+                  Continuar comprando
+                </button>
+                <button
+                  className="btn btn-outline-danger"
+                  onClick={vaciarCarrito}
+                >
+                  <FaTrash className="me-2" />
+                  Vaciar carrito
+                </button>
+              </div>
+            </div>
 
-            {/* Lista de productos */}
-            {carrito.length === 0 ? (
-              <motion.div
-                className="text-center py-5 text-muted"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <i className="bi bi-cart-x display-1 mb-3" />
-                <h4>Tu carrito está vacío</h4>
-                <p className="lead">¡Agrega algunos productos para comenzar!</p>
-                <a href="/cliente/categorias" className="btn btn-danger">
-                  Ver productos
-                </a>
-              </motion.div>
-            ) : (
-              <>
-                <div className="row">
-                  <div className="col-lg-8">
-                    <div className="card shadow-sm border-0 mb-4">
-                      <div className="card-header bg-light">
-                        <h5 className="mb-0">Productos en tu carrito</h5>
-                      </div>
-                      <div className="card-body p-0">
-                        <AnimatePresence>
-                          {carrito.map((item, index) => (
-                            <motion.div
-                              key={item.id}
-                              className={`p-4 ${index !== carrito.length - 1 ? 'border-bottom' : ''}`}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: 20 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <div className="row align-items-center">
-                                {/* Imagen del producto */}
-                                <div className="col-md-2">
-                                  <img
-                                    src={item.imagen || "https://via.placeholder.com/80"}
-                                    alt={item.nombre}
-                                    className="img-fluid rounded"
-                                    style={{ width: "80px", height: "80px", objectFit: "cover" }}
-                                  />
-                                </div>
-
-                                {/* Información del producto */}
-                                <div className="col-md-4">
-                                  <h6 className="mb-1 fw-semibold">{item.nombre}</h6>
-                                  <small className="text-muted">{item.descripcion}</small>
-                                  <div className="mt-1">
-                                    <span className="badge bg-secondary">{item.categoria}</span>
-                                  </div>
-                                </div>
-
-                                {/* Controles de cantidad */}
-                                <div className="col-md-3">
-                                  <div className="d-flex align-items-center justify-content-center">
-                                    <button
-                                      className="btn btn-outline-secondary btn-sm"
-                                      onClick={() => handleCantidadChange(item.id, item.cantidad - 1)}
-                                      disabled={item.cantidad <= 1}
-                                    >
-                                      <FaMinus size={12} />
-                                    </button>
-                                    <span className="mx-3 fw-bold">{item.cantidad}</span>
-                                    <button
-                                      className="btn btn-outline-secondary btn-sm"
-                                      onClick={() => handleCantidadChange(item.id, item.cantidad + 1)}
-                                      disabled={item.cantidad >= item.stock}
-                                    >
-                                      <FaPlus size={12} />
-                                    </button>
-                                  </div>
-                                  <small className="text-muted d-block text-center mt-1">
-                                    Stock: {item.stock}
-                                  </small>
-                                </div>
-
-                                {/* Precio */}
-                                <div className="col-md-2 text-center">
-                                  <div className="fw-bold text-success">
-                                    ${(item.precio * item.cantidad).toFixed(2)}
-                                  </div>
-                                  <small className="text-muted">
-                                    ${item.precio.toFixed(2)} c/u
-                                  </small>
-                                </div>
-
-                                {/* Botón eliminar */}
-                                <div className="col-md-1 text-center">
-                                  <button
-                                    className="btn btn-outline-danger btn-sm"
-                                    onClick={() => handleEliminar(item.id)}
-                                    title="Eliminar producto"
+            <div className="row">
+              {/* Lista de productos */}
+              <div className="col-lg-8">
+                <div className="card shadow-sm">
+                  <div className="card-header bg-primary text-white">
+                    <h5 className="mb-0">
+                      Productos ({carrito.length} {carrito.length === 1 ? 'artículo' : 'artículos'})
+                    </h5>
+                  </div>
+                  <div className="card-body p-0">
+                    <AnimatePresence>
+                      {carrito.map((item, index) => (
+                        <motion.div
+                          key={item.id}
+                          className={`p-4 ${index !== carrito.length - 1 ? 'border-bottom' : ''}`}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <div className="row align-items-center">
+                            <div className="col-md-6">
+                              <div className="d-flex align-items-center">
+                                <div className="me-3">
+                                  <div 
+                                    className="bg-light rounded d-flex align-items-center justify-content-center"
+                                    style={{ width: "60px", height: "60px" }}
                                   >
-                                    <FaTrash />
-                                  </button>
+                                    <FaShoppingBag className="text-muted" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <h6 className="mb-1 fw-bold text-danger">{item.nombre}</h6>
+                                  <small className="text-muted">Código: {item.codigo}</small>
+                                  <br />
+                                  <small className="text-success fw-bold">
+                                    ${parseFloat(item.precio).toFixed(2)} c/u
+                                  </small>
                                 </div>
                               </div>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Resumen del pedido */}
-                  <div className="col-lg-4">
-                    <div className="card shadow-sm border-0 sticky-top" style={{ top: '1rem' }}>
-                      <div className="card-header bg-danger text-white">
-                        <h5 className="mb-0">Resumen del pedido</h5>
-                      </div>
-                      <div className="card-body">
-                        {/* Desglose de precios */}
-                        <div className="mb-3">
-                          {carrito.map((item) => (
-                            <div key={item.id} className="d-flex justify-content-between mb-1">
-                              <span className="text-muted small">
-                                {item.nombre} x{item.cantidad}
-                              </span>
-                              <span className="small">
-                                ${(item.precio * item.cantidad).toFixed(2)}
-                              </span>
                             </div>
-                          ))}
-                        </div>
 
-                        <hr />
+                            <div className="col-md-3">
+                              <div className="d-flex align-items-center justify-content-center">
+                                {editandoCantidad === item.id ? (
+                                  <div className="input-group" style={{ maxWidth: "150px" }}>
+                                    <input
+                                      type="number"
+                                      className="form-control form-control-sm text-center"
+                                      value={cantidadTemp}
+                                      onChange={(e) => setCantidadTemp(e.target.value)}
+                                      min="1"
+                                      max={item.stock}
+                                      autoFocus
+                                    />
+                                    <button
+                                      className="btn btn-success btn-sm"
+                                      onClick={() => guardarCantidadEditada(item.id)}
+                                    >
+                                      <FaSave />
+                                    </button>
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      onClick={cancelarEdicion}
+                                    >
+                                      <FaTimes />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="d-flex align-items-center gap-2">
+                                    <button
+                                      className="btn btn-outline-secondary btn-sm"
+                                      onClick={() => actualizarCantidad(item.id, item.cantidad - 1)}
+                                    >
+                                      <FaMinus />
+                                    </button>
+                                    <span 
+                                      className="fw-bold px-3 py-1 bg-light rounded cursor-pointer"
+                                      onClick={() => iniciarEdicionCantidad(item.id, item.cantidad)}
+                                      title="Click para editar"
+                                      style={{ cursor: "pointer", minWidth: "40px", textAlign: "center" }}
+                                    >
+                                      {item.cantidad}
+                                    </span>
+                                    <button
+                                      className="btn btn-outline-secondary btn-sm"
+                                      onClick={() => actualizarCantidad(item.id, item.cantidad + 1)}
+                                      disabled={item.cantidad >= item.stock}
+                                    >
+                                      <FaPlus />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-center mt-1">
+                                <small className="text-muted">
+                                  Stock: {item.stock}
+                                </small>
+                              </div>
+                            </div>
 
-                        {/* Total */}
-                        <div className="d-flex justify-content-between mb-3">
-                          <h5 className="fw-bold">Total:</h5>
-                          <h5 className="fw-bold text-success">${total.toFixed(2)}</h5>
-                        </div>
+                            <div className="col-md-2 text-center">
+                              <div className="fw-bold text-success fs-5">
+                                ${(item.precio * item.cantidad).toFixed(2)}
+                              </div>
+                            </div>
 
-                        {/* Botones de acción */}
-                        <div className="d-grid gap-2">
-                          <button
-                            className="btn btn-success btn-lg"
-                            onClick={handleFinalizarCompra}
-                            disabled={procesandoPago}
-                          >
-                            {procesandoPago ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm me-2" />
-                                Procesando...
-                              </>
-                            ) : (
-                              <>
-                                <FaCreditCard className="me-2" />
-                                Finalizar compra
-                              </>
-                            )}
-                          </button>
-                          <button
-                            className="btn btn-outline-secondary"
-                            onClick={handleVaciar}
-                            disabled={procesandoPago}
-                          >
-                            Vaciar carrito
-                          </button>
-                        </div>
-
-                        {/* Información adicional */}
-                        <div className="mt-3 p-3 bg-light rounded">
-                          <small className="text-muted">
-                            <strong>📦 Envío gratis</strong> en compras mayores a $50<br />
-                            <strong>🔒 Pago seguro</strong> con encriptación SSL<br />
-                            <strong>↩️ 30 días</strong> de garantía
-                          </small>
-                        </div>
-                      </div>
-                    </div>
+                            <div className="col-md-1 text-center">
+                              <button
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={() => eliminarProducto(item.id)}
+                                title="Eliminar producto"
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </div>
-              </>
-            )}
+              </div>
+
+              {/* Resumen de compra */}
+              <div className="col-lg-4">
+                <motion.div
+                  className="card shadow-sm"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className="card-header bg-success text-white">
+                    <h5 className="mb-0">Resumen de compra</h5>
+                  </div>
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between mb-2">
+                      <span>Subtotal:</span>
+                      <span className="fw-bold">${calcularSubtotal().toFixed(2)}</span>
+                    </div>
+                    <div className="d-flex justify-content-between mb-2">
+                      <span>IVA (12%):</span>
+                      <span className="fw-bold">${calcularIVA().toFixed(2)}</span>
+                    </div>
+                    <hr />
+                    <div className="d-flex justify-content-between mb-4">
+                      <span className="fs-5 fw-bold">Total:</span>
+                      <span className="fs-4 fw-bold text-success">
+                        ${calcularTotal().toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="d-grid gap-2">
+                      <button
+                        className="btn btn-success btn-lg"
+                        onClick={procederAlPago}
+                      >
+                        <FaCreditCard className="me-2" />
+                        Proceder al pago
+                      </button>
+                      <button
+                        className="btn btn-outline-primary"
+                        onClick={continuarComprando}
+                      >
+                        Seguir comprando
+                      </button>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-light rounded">
+                      <h6 className="text-muted mb-2">Información de envío:</h6>
+                      <small className="text-muted">
+                        📦 Envío gratis para compras superiores a $50.00
+                        <br />
+                        🚚 Entrega en 24-48 horas
+                        <br />
+                        💳 Aceptamos múltiples formas de pago
+                      </small>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
           </main>
         </div>
       </div>
+
+      <footer className="bg-danger text-white py-2 text-center mt-auto">
+        <small>Vendismarket — Tu compra segura y confiable.</small>
+      </footer>
     </div>
   );
-}
+};

@@ -39,6 +39,11 @@ app.use("/api/usuarios", usuariosRoutes);
 const reclamosRoutes = require("./routes/reclamosRoutes");
 app.use("/api/reclamos", reclamosRoutes);
 
+//Carrito
+const carritoRouter = require("./routes/carrito");
+app.use("/api/carrito", carritoRouter);
+
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ Backend corriendo en http://localhost:${PORT}`);

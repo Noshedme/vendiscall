@@ -27,6 +27,8 @@ import { CuentaCliente } from "../pages/CuentaCliente";
 import { CategoriasProductos } from "../pages/CategoriasProductos";
 import { CarritoCliente } from "../pages/CarritoCliente";
 import { FormularioReclamos } from "../pages/FormularioReclamos";
+import { FormularioPago } from "../pages/FormularioPago";
+import { HistorialPedidos } from "../pages/HistorialPedidos";
 
 export const AppRoutes = () => {
   const { user } = useAuth();
@@ -159,6 +161,22 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute role="cliente">
             <FormularioReclamos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cliente/pago"
+        element={
+          <ProtectedRoute role="cliente">
+            <FormularioPago />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cliente/historial"
+        element={
+          <ProtectedRoute role="cliente">
+            <HistorialPedidos />
           </ProtectedRoute>
         }
       />
