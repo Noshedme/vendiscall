@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { AppRoutes } from "./routes/AppRoutes";
 import { useEffect } from "react";
 import { useAuth } from "./context/AuthContext";
+import { CarritoProvider } from './context/CarritoContext';
 
 function AppContent() {
   const { checkAuth } = useAuth();
@@ -24,5 +25,7 @@ function App() {
     </BrowserRouter>
   );
 }
+
+
 
 export default App;

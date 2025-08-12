@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
+import { useCarrito } from "../hooks/useCarrito";
 import { FaShoppingCart, FaSearch, FaFilter, FaPlus, FaTags, FaBoxOpen, FaEye } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import "react-toastify/dist/ReactToastify.css";
@@ -16,12 +18,19 @@ export const CategoriasProductos = () => {
   const [busqueda, setBusqueda] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [loading, setLoading] = useState(true);
-  const [carrito, setCarrito] = useState([]);
+  
+  const {
+    carrito,
+    agregarAlCarrito,
+    obtenerCantidadTotal,
+    obtenerCantidadProducto
+  } = useCarrito();
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     AOS.init({ duration: 500 });
     cargarProductos();
-    cargarCarritoLocal();
   }, []);
 
   const cargarProductos = async () => {
@@ -41,48 +50,11 @@ export const CategoriasProductos = () => {
     }
   };
 
-  const cargarCarritoLocal = () => {
-    const carritoGuardado = localStorage.getItem("carrito");
-    if (carritoGuardado) {
-      setCarrito(JSON.parse(carritoGuardado));
+  const manejarAgregarAlCarrito = async (producto) => {
+    const success = await agregarAlCarrito(producto);
+    if (!success) {
+      console.log("No se pudo agregar al carrito, revisa la consola");
     }
-  };
-
-  const guardarCarritoLocal = (nuevoCarrito) => {
-    localStorage.setItem("carrito", JSON.stringify(nuevoCarrito));
-    setCarrito(nuevoCarrito);
-  };
-
-  const agregarAlCarrito = (producto) => {
-    const carritoActual = [...carrito];
-    const productoExistente = carritoActual.find(item => item.id === producto.id);
-
-    if (productoExistente) {
-      if (productoExistente.cantidad < producto.stock) {
-        productoExistente.cantidad += 1;
-        toast.success(`${producto.nombre} agregado al carrito`);
-      } else {
-        toast.warning(`No hay más stock disponible de ${producto.nombre}`);
-        return;
-      }
-    } else {
-      if (producto.stock > 0) {
-        carritoActual.push({
-          id: producto.id,
-          codigo: producto.codigo,
-          nombre: producto.nombre,
-          precio: producto.precio,
-          cantidad: 1,
-          stock: producto.stock
-        });
-        toast.success(`${producto.nombre} agregado al carrito`);
-      } else {
-        toast.error(`${producto.nombre} no tiene stock disponible`);
-        return;
-      }
-    }
-
-    guardarCarritoLocal(carritoActual);
   };
 
   const productosFiltrados = productos.filter(producto => {
@@ -107,7 +79,11 @@ export const CategoriasProductos = () => {
     return "Disponible";
   };
 
-  const totalItemsCarrito = carrito.reduce((total, item) => total + item.cantidad, 0);
+  const totalItemsCarrito = obtenerCantidadTotal();
+
+  const irAlCarrito = () => {
+    navigate("/cliente/carrito");
+  };
 
   if (loading) {
     return (
@@ -143,14 +119,18 @@ export const CategoriasProductos = () => {
                 <span className="badge bg-secondary fs-6">
                   {productosFiltrados.length} productos
                 </span>
-                <div className="position-relative">
-                  <FaShoppingCart className="fs-4 text-danger" />
+                <button
+                  className="btn btn-outline-danger position-relative"
+                  onClick={irAlCarrito}
+                  title="Ver carrito"
+                >
+                  <FaShoppingCart className="fs-5" />
                   {totalItemsCarrito > 0 && (
                     <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                       {totalItemsCarrito}
                     </span>
                   )}
-                </div>
+                </button>
               </div>
             </div>
 
@@ -217,70 +197,108 @@ export const CategoriasProductos = () => {
 
             {/* Grid de productos */}
             <div className="row g-4">
-              {productosFiltrados.map((producto, index) => (
-                <div key={producto.id} className="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                  <motion.div
-                    className="card h-100 shadow-sm border-0"
-                    data-aos="fade-up"
-                    data-aos-delay={index * 50}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                  >
-                    {/* Imagen del producto (placeholder) */}
-                    <div 
-                      className="card-img-top d-flex align-items-center justify-content-center bg-light"
-                      style={{ height: "200px" }}
+              {productosFiltrados.map((producto, index) => {
+                const cantidadEnCarrito = obtenerCantidadProducto(producto.id);
+                const stockDisponible = producto.stock - cantidadEnCarrito;
+                
+                return (
+                  <div key={producto.id} className="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <motion.div
+                      className="card h-100 shadow-sm border-0"
+                      data-aos="fade-up"
+                      data-aos-delay={index * 50}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ y: -5, transition: { duration: 0.2 } }}
                     >
-                      <FaBoxOpen className="fs-1 text-muted" />
-                    </div>
-
-                    <div className="card-body d-flex flex-column">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <span className="badge bg-primary">{producto.categoria}</span>
-                        <span className={`badge ${getStockBadge(producto.stock)}`}>
-                          {getStockText(producto.stock)}
-                        </span>
+                      {/* Imagen del producto (placeholder) */}
+                      <div 
+                        className="card-img-top d-flex align-items-center justify-content-center bg-light position-relative"
+                        style={{ height: "200px" }}
+                      >
+                        <FaBoxOpen className="fs-1 text-muted" />
+                        
+                        {/* Badge de cantidad en carrito */}
+                        {cantidadEnCarrito > 0 && (
+                          <span className="position-absolute top-0 end-0 m-2 badge bg-success rounded-pill">
+                            En carrito: {cantidadEnCarrito}
+                          </span>
+                        )}
                       </div>
 
-                      <h5 className="card-title text-danger fw-bold mb-2">
-                        {producto.nombre}
-                      </h5>
-                      
-                      <p className="text-muted small mb-2">
-                        <strong>Código:</strong> {producto.codigo}
-                      </p>
-
-                      <p className="card-text text-muted small mb-3 flex-grow-1">
-                        {producto.descripcion}
-                      </p>
-
-                      <div className="mb-3">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className="text-success fs-4 fw-bold">
-                            ${parseFloat(producto.precio).toFixed(2)}
-                          </span>
-                          <span className="text-muted small">
-                            Stock: {producto.stock}
+                      <div className="card-body d-flex flex-column">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <span className="badge bg-primary">{producto.categoria}</span>
+                          <span className={`badge ${getStockBadge(producto.stock)}`}>
+                            {getStockText(producto.stock)}
                           </span>
                         </div>
-                      </div>
 
-                      <div className="mt-auto">
-                        <button
-                          className={`btn w-100 ${producto.stock > 0 ? "btn-success" : "btn-secondary"}`}
-                          disabled={producto.stock <= 0}
-                          onClick={() => agregarAlCarrito(producto)}
-                        >
-                          <FaPlus className="me-2" />
-                          {producto.stock > 0 ? "Agregar al carrito" : "Sin stock"}
-                        </button>
+                        <h5 className="card-title text-danger fw-bold mb-2">
+                          {producto.nombre}
+                        </h5>
+                        
+                        <p className="text-muted small mb-2">
+                          <strong>Código:</strong> {producto.codigo}
+                        </p>
+
+                        <p className="card-text text-muted small mb-3 flex-grow-1">
+                          {producto.descripcion}
+                        </p>
+
+                        <div className="mb-3">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="text-success fs-4 fw-bold">
+                              ${parseFloat(producto.precio).toFixed(2)}
+                            </span>
+                            <div className="text-end">
+                              <span className="text-muted small d-block">
+                                Stock: {producto.stock}
+                              </span>
+                              {cantidadEnCarrito > 0 && (
+                                <span className="text-success small d-block">
+                                  Disponible: {stockDisponible}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-auto">
+                          {stockDisponible > 0 ? (
+                            <button
+                              className="btn btn-success w-100"
+                              onClick={() => manejarAgregarAlCarrito(producto)}
+                            >
+                              <FaPlus className="me-2" />
+                              {cantidadEnCarrito > 0 ? "Agregar más" : "Agregar al carrito"}
+                            </button>
+                          ) : (
+                            <div className="d-grid gap-1">
+                              <button
+                                className="btn btn-secondary w-100"
+                                disabled
+                              >
+                                {producto.stock === 0 ? "Sin stock" : "En carrito (máx)"}
+                              </button>
+                              {cantidadEnCarrito > 0 && (
+                                <button
+                                  className="btn btn-outline-primary btn-sm w-100"
+                                  onClick={irAlCarrito}
+                                >
+                                  <FaEye className="me-1" />
+                                  Ver en carrito
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                </div>
-              ))}
+                    </motion.div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Mensaje cuando no hay productos */}
@@ -309,6 +327,25 @@ export const CategoriasProductos = () => {
                   </button>
                 )}
               </motion.div>
+            )}
+
+            {/* Floating Action Button para carrito en móviles */}
+            {totalItemsCarrito > 0 && (
+              <div 
+                className="position-fixed bottom-0 end-0 p-3 d-md-none"
+                style={{ zIndex: 1050 }}
+              >
+                <button
+                  className="btn btn-success btn-lg rounded-circle shadow-lg position-relative"
+                  onClick={irAlCarrito}
+                  style={{ width: "60px", height: "60px" }}
+                >
+                  <FaShoppingCart />
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {totalItemsCarrito}
+                  </span>
+                </button>
+              </div>
             )}
           </main>
         </div>

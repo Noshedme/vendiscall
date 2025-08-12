@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
+import { useCarrito } from "../hooks/useCarrito";
 import { 
   FaShoppingCart, 
   FaTrash, 
@@ -21,64 +22,27 @@ import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export const CarritoCliente = () => {
-  const [carrito, setCarrito] = useState([]);
+  const {
+    carrito,
+    loading,
+    actualizarCantidad,
+    eliminarDelCarrito,
+    vaciarCarrito,
+    obtenerSubtotal,
+    obtenerIVA,
+    obtenerTotal
+  } = useCarrito();
+
   const [editandoCantidad, setEditandoCantidad] = useState(null);
   const [cantidadTemp, setCantidadTemp] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    cargarCarrito();
-  }, []);
-
-  const cargarCarrito = () => {
-    const carritoGuardado = localStorage.getItem("carrito");
-    if (carritoGuardado) {
-      setCarrito(JSON.parse(carritoGuardado));
-    }
-  };
-
-  const guardarCarrito = (nuevoCarrito) => {
-    localStorage.setItem("carrito", JSON.stringify(nuevoCarrito));
-    setCarrito(nuevoCarrito);
-  };
-
-  const actualizarCantidad = (productId, nuevaCantidad) => {
-    if (nuevaCantidad < 1) {
-      eliminarProducto(productId);
-      return;
-    }
-
-    const productoEnCarrito = carrito.find(item => item.id === productId);
-    
-    if (nuevaCantidad > productoEnCarrito.stock) {
-      toast.warning(`Solo hay ${productoEnCarrito.stock} unidades disponibles`);
-      return;
-    }
-
-    const carritoActualizado = carrito.map(item =>
-      item.id === productId
-        ? { ...item, cantidad: nuevaCantidad }
-        : item
-    );
-
-    guardarCarrito(carritoActualizado);
-    toast.success("Cantidad actualizada");
-  };
-
-  const eliminarProducto = (productId) => {
-    const producto = carrito.find(item => item.id === productId);
-    const carritoActualizado = carrito.filter(item => item.id !== productId);
-    
-    guardarCarrito(carritoActualizado);
-    toast.info(`${producto.nombre} eliminado del carrito`);
-  };
-
-  const iniciarEdicionCantidad = (productId, cantidadActual) => {
-    setEditandoCantidad(productId);
+  const iniciarEdicionCantidad = (productoId, cantidadActual) => {
+    setEditandoCantidad(productoId);
     setCantidadTemp(cantidadActual.toString());
   };
 
-  const guardarCantidadEditada = (productId) => {
+  const guardarCantidadEditada = async (productoId) => {
     const nuevaCantidad = parseInt(cantidadTemp);
     
     if (isNaN(nuevaCantidad) || nuevaCantidad < 1) {
@@ -86,9 +50,11 @@ export const CarritoCliente = () => {
       return;
     }
 
-    actualizarCantidad(productId, nuevaCantidad);
-    setEditandoCantidad(null);
-    setCantidadTemp("");
+    const success = await actualizarCantidad(productoId, nuevaCantidad);
+    if (success) {
+      setEditandoCantidad(null);
+      setCantidadTemp("");
+    }
   };
 
   const cancelarEdicion = () => {
@@ -96,23 +62,10 @@ export const CarritoCliente = () => {
     setCantidadTemp("");
   };
 
-  const vaciarCarrito = () => {
+  const manejarVaciarCarrito = async () => {
     if (window.confirm("¿Estás seguro de que quieres vaciar el carrito?")) {
-      guardarCarrito([]);
-      toast.info("Carrito vaciado");
+      await vaciarCarrito();
     }
-  };
-
-  const calcularSubtotal = () => {
-    return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
-  };
-
-  const calcularIVA = () => {
-    return calcularSubtotal() * 0.12; // IVA del 12%
-  };
-
-  const calcularTotal = () => {
-    return calcularSubtotal() + calcularIVA();
   };
 
   const procederAlPago = () => {
@@ -121,14 +74,34 @@ export const CarritoCliente = () => {
       return;
     }
     
-    // Aquí iría la navegación al formulario de pago
     toast.info("Redirigiendo al formulario de pago...");
-    navigate("/cliente/pago")
+    navigate("/cliente/pago");
   };
 
   const continuarComprando = () => {
     navigate("/cliente/categorias");
   };
+
+  // Función auxiliar para obtener el ID del producto
+  const obtenerIdProducto = (item) => {
+    return item.producto_id || item.id;
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        <Header />
+        <div className="container-fluid flex-grow-1 d-flex justify-content-center align-items-center">
+          <div className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando...</span>
+            </div>
+            <p className="mt-2">Cargando carrito...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (carrito.length === 0) {
     return (
@@ -194,7 +167,7 @@ export const CarritoCliente = () => {
                 </button>
                 <button
                   className="btn btn-outline-danger"
-                  onClick={vaciarCarrito}
+                  onClick={manejarVaciarCarrito}
                 >
                   <FaTrash className="me-2" />
                   Vaciar carrito
@@ -213,114 +186,117 @@ export const CarritoCliente = () => {
                   </div>
                   <div className="card-body p-0">
                     <AnimatePresence>
-                      {carrito.map((item, index) => (
-                        <motion.div
-                          key={item.id}
-                          className={`p-4 ${index !== carrito.length - 1 ? 'border-bottom' : ''}`}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <div className="row align-items-center">
-                            <div className="col-md-6">
-                              <div className="d-flex align-items-center">
-                                <div className="me-3">
-                                  <div 
-                                    className="bg-light rounded d-flex align-items-center justify-content-center"
-                                    style={{ width: "60px", height: "60px" }}
-                                  >
-                                    <FaShoppingBag className="text-muted" />
+                      {carrito.map((item, index) => {
+                        const productoId = obtenerIdProducto(item);
+                        return (
+                          <motion.div
+                            key={productoId}
+                            className={`p-4 ${index !== carrito.length - 1 ? 'border-bottom' : ''}`}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ delay: index * 0.1 }}
+                          >
+                            <div className="row align-items-center">
+                              <div className="col-md-6">
+                                <div className="d-flex align-items-center">
+                                  <div className="me-3">
+                                    <div 
+                                      className="bg-light rounded d-flex align-items-center justify-content-center"
+                                      style={{ width: "60px", height: "60px" }}
+                                    >
+                                      <FaShoppingBag className="text-muted" />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h6 className="mb-1 fw-bold text-danger">{item.nombre}</h6>
+                                    <small className="text-muted">Código: {item.codigo}</small>
+                                    <br />
+                                    <small className="text-success fw-bold">
+                                      ${parseFloat(item.precio).toFixed(2)} c/u
+                                    </small>
                                   </div>
                                 </div>
-                                <div>
-                                  <h6 className="mb-1 fw-bold text-danger">{item.nombre}</h6>
-                                  <small className="text-muted">Código: {item.codigo}</small>
-                                  <br />
-                                  <small className="text-success fw-bold">
-                                    ${parseFloat(item.precio).toFixed(2)} c/u
+                              </div>
+
+                              <div className="col-md-3">
+                                <div className="d-flex align-items-center justify-content-center">
+                                  {editandoCantidad === productoId ? (
+                                    <div className="input-group" style={{ maxWidth: "150px" }}>
+                                      <input
+                                        type="number"
+                                        className="form-control form-control-sm text-center"
+                                        value={cantidadTemp}
+                                        onChange={(e) => setCantidadTemp(e.target.value)}
+                                        min="1"
+                                        max={item.stock}
+                                        autoFocus
+                                      />
+                                      <button
+                                        className="btn btn-success btn-sm"
+                                        onClick={() => guardarCantidadEditada(productoId)}
+                                      >
+                                        <FaSave />
+                                      </button>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={cancelarEdicion}
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="d-flex align-items-center gap-2">
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => actualizarCantidad(productoId, item.cantidad - 1)}
+                                      >
+                                        <FaMinus />
+                                      </button>
+                                      <span 
+                                        className="fw-bold px-3 py-1 bg-light rounded cursor-pointer"
+                                        onClick={() => iniciarEdicionCantidad(productoId, item.cantidad)}
+                                        title="Click para editar"
+                                        style={{ cursor: "pointer", minWidth: "40px", textAlign: "center" }}
+                                      >
+                                        {item.cantidad}
+                                      </span>
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => actualizarCantidad(productoId, item.cantidad + 1)}
+                                        disabled={item.cantidad >= item.stock}
+                                      >
+                                        <FaPlus />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-center mt-1">
+                                  <small className="text-muted">
+                                    Stock: {item.stock}
                                   </small>
                                 </div>
                               </div>
-                            </div>
 
-                            <div className="col-md-3">
-                              <div className="d-flex align-items-center justify-content-center">
-                                {editandoCantidad === item.id ? (
-                                  <div className="input-group" style={{ maxWidth: "150px" }}>
-                                    <input
-                                      type="number"
-                                      className="form-control form-control-sm text-center"
-                                      value={cantidadTemp}
-                                      onChange={(e) => setCantidadTemp(e.target.value)}
-                                      min="1"
-                                      max={item.stock}
-                                      autoFocus
-                                    />
-                                    <button
-                                      className="btn btn-success btn-sm"
-                                      onClick={() => guardarCantidadEditada(item.id)}
-                                    >
-                                      <FaSave />
-                                    </button>
-                                    <button
-                                      className="btn btn-secondary btn-sm"
-                                      onClick={cancelarEdicion}
-                                    >
-                                      <FaTimes />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="d-flex align-items-center gap-2">
-                                    <button
-                                      className="btn btn-outline-secondary btn-sm"
-                                      onClick={() => actualizarCantidad(item.id, item.cantidad - 1)}
-                                    >
-                                      <FaMinus />
-                                    </button>
-                                    <span 
-                                      className="fw-bold px-3 py-1 bg-light rounded cursor-pointer"
-                                      onClick={() => iniciarEdicionCantidad(item.id, item.cantidad)}
-                                      title="Click para editar"
-                                      style={{ cursor: "pointer", minWidth: "40px", textAlign: "center" }}
-                                    >
-                                      {item.cantidad}
-                                    </span>
-                                    <button
-                                      className="btn btn-outline-secondary btn-sm"
-                                      onClick={() => actualizarCantidad(item.id, item.cantidad + 1)}
-                                      disabled={item.cantidad >= item.stock}
-                                    >
-                                      <FaPlus />
-                                    </button>
-                                  </div>
-                                )}
+                              <div className="col-md-2 text-center">
+                                <div className="fw-bold text-success fs-5">
+                                  ${(item.precio * item.cantidad).toFixed(2)}
+                                </div>
                               </div>
-                              <div className="text-center mt-1">
-                                <small className="text-muted">
-                                  Stock: {item.stock}
-                                </small>
+
+                              <div className="col-md-1 text-center">
+                                <button
+                                  className="btn btn-outline-danger btn-sm"
+                                  onClick={() => eliminarDelCarrito(productoId)}
+                                  title="Eliminar producto"
+                                >
+                                  <FaTrash />
+                                </button>
                               </div>
                             </div>
-
-                            <div className="col-md-2 text-center">
-                              <div className="fw-bold text-success fs-5">
-                                ${(item.precio * item.cantidad).toFixed(2)}
-                              </div>
-                            </div>
-
-                            <div className="col-md-1 text-center">
-                              <button
-                                className="btn btn-outline-danger btn-sm"
-                                onClick={() => eliminarProducto(item.id)}
-                                title="Eliminar producto"
-                              >
-                                <FaTrash />
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                          </motion.div>
+                        );
+                      })}
                     </AnimatePresence>
                   </div>
                 </div>
@@ -340,17 +316,17 @@ export const CarritoCliente = () => {
                   <div className="card-body">
                     <div className="d-flex justify-content-between mb-2">
                       <span>Subtotal:</span>
-                      <span className="fw-bold">${calcularSubtotal().toFixed(2)}</span>
+                      <span className="fw-bold">${obtenerSubtotal().toFixed(2)}</span>
                     </div>
                     <div className="d-flex justify-content-between mb-2">
                       <span>IVA (12%):</span>
-                      <span className="fw-bold">${calcularIVA().toFixed(2)}</span>
+                      <span className="fw-bold">${obtenerIVA().toFixed(2)}</span>
                     </div>
                     <hr />
                     <div className="d-flex justify-content-between mb-4">
                       <span className="fs-5 fw-bold">Total:</span>
                       <span className="fs-4 fw-bold text-success">
-                        ${calcularTotal().toFixed(2)}
+                        ${obtenerTotal().toFixed(2)}
                       </span>
                     </div>
 
