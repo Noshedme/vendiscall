@@ -22,13 +22,13 @@ export const Sidebar = () => {
       { path: "/cajero/historial", label: "Historial de Ventas", icon: "bi-clock-history" }, 
       { path: "/cajero/cuenta", label: "Mi Cuenta", icon: "bi-person-circle" } 
     ], 
-cliente: [
-  { path: "/cliente", label: "Inicio", icon: "bi-house-door" },
-  { path: "/cliente/cuenta", label: "Mi Cuenta", icon: "bi-person-circle" },
-  { path: "/cliente/categorias", label: "Categorías", icon: "bi-tags" },
-  { path: "/cliente/carrito", label: "Carrito", icon: "bi-cart" },
-  { path: "/cliente/reclamos", label: "Reclamos", icon: "bi-chat-dots" }
-]
+    cliente: [
+      { path: "/cliente", label: "Inicio", icon: "bi-house-door" },
+      { path: "/cliente/cuenta", label: "Mi Cuenta", icon: "bi-person-circle" },
+      { path: "/cliente/categorias", label: "Categorías", icon: "bi-tags" },
+      { path: "/cliente/carrito", label: "Carrito", icon: "bi-cart" },
+      { path: "/cliente/reclamos", label: "Reclamos", icon: "bi-chat-dots" }
+    ]
 
 
   }; 

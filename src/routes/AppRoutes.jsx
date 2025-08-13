@@ -1,4 +1,5 @@
 // src/routes/AppRoutes.jsx
+import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -20,6 +21,7 @@ import { CuentaCajero } from "../pages/CuentaCajero";
 import { BuscarProductoCajero } from "../pages/BuscarProductoCajero";
 import { HistorialVentasCajero } from "../pages/HistorialVentasCajero";
 import { CajaCajero } from "../pages/CajaCajero";
+import { CarritoEnCurso } from "../pages/CarritoEnCurso";
 
 // Páginas cliente
 import { DashboardCliente } from "../pages/DashboardCliente";
@@ -30,156 +32,174 @@ import { FormularioReclamos } from "../pages/FormularioReclamos";
 import { FormularioPago } from "../pages/FormularioPago";
 import { HistorialPedidos } from "../pages/HistorialPedidos";
 
-export const AppRoutes = () => {
+// Componente de ruta protegida
+const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  
+  if (user.role !== role) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+};
 
-  const ProtectedRoute = ({ children, role }) => {
-    if (!user) return <Navigate to="/" />;
-    if (user.role !== role) return <Navigate to="/" />;
-    return children;
-  };
-
+export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Página de inicio de sesión */}
+      {/* Rutas públicas */}
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<RegisterCliente />} />
       <Route path="/recuperar" element={<RecuperarContrasena />} />
       <Route path="/reestablecer" element={<ReestablecerContrasena />} />
 
-      {/* Rutas para administrador */}
-      <Route
-        path="/admin"
+      {/* Rutas de administrador */}
+      <Route 
+        path="/admin" 
         element={
           <ProtectedRoute role="admin">
             <DashboardAdmin />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/admin/usuarios"
+      <Route 
+        path="/admin/usuarios" 
         element={
           <ProtectedRoute role="admin">
             <Usuarios />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/admin/productos"
+      <Route 
+        path="/admin/productos" 
         element={
           <ProtectedRoute role="admin">
             <Productos />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/admin/reportes"
+      <Route 
+        path="/admin/reportes" 
         element={
           <ProtectedRoute role="admin">
             <Reportes />
           </ProtectedRoute>
-        }
+        } 
       />
 
-      {/* Rutas para cajero */}
-      <Route
-        path="/cajero"
+      {/* Rutas de cajero */}
+      <Route 
+        path="/cajero" 
         element={
           <ProtectedRoute role="cajero">
             <DashboardCajero />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cajero/cuenta"
+      <Route 
+        path="/cajero/cuenta" 
         element={
           <ProtectedRoute role="cajero">
             <CuentaCajero />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cajero/buscar"
+      <Route 
+        path="/cajero/buscar" 
         element={
           <ProtectedRoute role="cajero">
             <BuscarProductoCajero />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cajero/historial"
+      <Route 
+        path="/cajero/historial" 
         element={
           <ProtectedRoute role="cajero">
             <HistorialVentasCajero />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cajero/caja"
+      <Route 
+        path="/cajero/caja" 
         element={
           <ProtectedRoute role="cajero">
             <CajaCajero />
           </ProtectedRoute>
-        }
+        } 
+      />
+      <Route 
+        path="/cajero/carrito" 
+        element={
+          <ProtectedRoute role="cajero">
+            <CarritoEnCurso />
+          </ProtectedRoute>
+        } 
       />
 
-      {/* Rutas para cliente */}
-      <Route
-        path="/cliente"
+      {/* Rutas de cliente */}
+      <Route 
+        path="/cliente" 
         element={
           <ProtectedRoute role="cliente">
             <DashboardCliente />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cliente/cuenta"
+      <Route 
+        path="/cliente/cuenta" 
         element={
           <ProtectedRoute role="cliente">
             <CuentaCliente />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cliente/categorias"
+      <Route 
+        path="/cliente/categorias" 
         element={
           <ProtectedRoute role="cliente">
             <CategoriasProductos />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cliente/carrito"
+      <Route 
+        path="/cliente/carrito" 
         element={
           <ProtectedRoute role="cliente">
             <CarritoCliente />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cliente/reclamos"
+      <Route 
+        path="/cliente/reclamos" 
         element={
           <ProtectedRoute role="cliente">
             <FormularioReclamos />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cliente/pago"
+      <Route 
+        path="/cliente/pago" 
         element={
           <ProtectedRoute role="cliente">
             <FormularioPago />
           </ProtectedRoute>
-        }
+        } 
       />
-      <Route
-        path="/cliente/historial"
+      <Route 
+        path="/cliente/historial" 
         element={
           <ProtectedRoute role="cliente">
             <HistorialPedidos />
           </ProtectedRoute>
-        }
+        } 
       />
+
+      {/* Ruta catch-all para rutas no encontradas */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

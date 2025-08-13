@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+// src/pages/FormularioPago.jsx
+import React, { useState, useEffect, useRef } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
-import { 
-  FaCreditCard, 
-  FaMoneyBillWave, 
+import {
+  FaCreditCard,
+  FaMoneyBillWave,
   FaExchangeAlt,
   FaStore,
   FaHome,
@@ -11,17 +12,25 @@ import {
   FaCheckCircle,
   FaQrcode,
   FaMapMarkerAlt,
-  FaPhone,
-  FaUser,
-  FaEnvelope,
   FaShoppingCart,
-  FaCalculator
+  FaCalculator,
+  FaUser
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useAuth } from "../context/AuthContext"; // si no existe ajusta o elimina
+
+/**
+ * FormularioPago.jsx
+ * - Envía la venta al endpoint POST /api/ventas (API configurable por REACT_APP_API_URL)
+ * - Si la API no responde, guarda la venta en localStorage como fallback (ventas_offline)
+ * - El cajero podrá ver las ventas desde la API (o desde localStorage si usas fallback)
+ *
+ * NOTA: Ajusta la URL de la API con REACT_APP_API_URL (ej: http://localhost:3001)
+ */
 
 export const FormularioPago = () => {
   const [carrito, setCarrito] = useState([]);
@@ -44,6 +53,10 @@ export const FormularioPago = () => {
   const [procesandoPago, setProcesandoPago] = useState(false);
   const [paso, setPaso] = useState(1); // 1: Cliente, 2: Entrega, 3: Pago
   const navigate = useNavigate();
+  const { user } = useAuth ? useAuth() : { user: null };
+
+  // QR estático (imagen en public/ImagenQR.png)
+  const qrStatic = "/ImagenQR.png";
 
   useEffect(() => {
     cargarCarrito();
@@ -52,7 +65,11 @@ export const FormularioPago = () => {
   const cargarCarrito = () => {
     const carritoGuardado = localStorage.getItem("carrito");
     if (carritoGuardado) {
-      setCarrito(JSON.parse(carritoGuardado));
+      try {
+        setCarrito(JSON.parse(carritoGuardado));
+      } catch {
+        setCarrito([]);
+      }
     } else {
       // Si no hay carrito, redirigir al carrito
       navigate("/cliente/carrito");
@@ -60,11 +77,11 @@ export const FormularioPago = () => {
   };
 
   const calcularSubtotal = () => {
-    return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+    return carrito.reduce((total, item) => total + (parseFloat(item.precio || 0) * (item.cantidad || 1)), 0);
   };
 
   const calcularIVA = () => {
-    return calcularSubtotal() * 0.12; // IVA del 12%
+    return calcularSubtotal() * 0.15; // IVA 15%
   };
 
   const calcularRecargoEnvio = () => {
@@ -77,80 +94,133 @@ export const FormularioPago = () => {
 
   const handleInputChange = (e, seccion) => {
     const { name, value } = e.target;
-    
+
     if (seccion === "cliente") {
       setDatosCliente(prev => ({ ...prev, [name]: value }));
     } else if (seccion === "tarjeta") {
       let formattedValue = value;
-      
-      // Formatear número de tarjeta
+
+      // Formateos simples
       if (name === "numero") {
         formattedValue = value.replace(/\s/g, "").replace(/(\d{4})(?=\d)/g, "$1 ");
-      }
-      // Formatear fecha de expiración
-      else if (name === "expiracion") {
+      } else if (name === "expiracion") {
         formattedValue = value.replace(/\D/g, "").replace(/(\d{2})(\d)/, "$1/$2");
-      }
-      // Limitar CVV a 4 dígitos
-      else if (name === "cvv") {
+      } else if (name === "cvv") {
         formattedValue = value.replace(/\D/g, "").slice(0, 4);
       }
-      
+
       setDatosTarjeta(prev => ({ ...prev, [name]: formattedValue }));
     }
   };
 
   const validarFormulario = () => {
-    // Validar datos básicos
+    // Datos cliente obligatorios
     if (!datosCliente.nombre || !datosCliente.email || !datosCliente.telefono) {
       toast.error("Por favor completa los datos personales obligatorios");
       return false;
     }
-
-    // Validar dirección si es envío a domicilio
+    // Dirección si es domicilio
     if (tipoEntrega === "domicilio" && (!datosCliente.direccion || !datosCliente.ciudad)) {
       toast.error("Por favor completa la dirección de entrega");
       return false;
     }
-
-    // Validar método de pago
+    // Método de pago
     if (!metodoPago) {
       toast.error("Por favor selecciona un método de pago");
       return false;
     }
-
-    // Validar datos de tarjeta si es pago con tarjeta
+    // Si tarjeta, validar campos tarjeta
     if (metodoPago === "tarjeta") {
       if (!datosTarjeta.numero || !datosTarjeta.nombre || !datosTarjeta.expiracion || !datosTarjeta.cvv) {
         toast.error("Por favor completa todos los datos de la tarjeta");
         return false;
       }
     }
-
     return true;
   };
 
+  // Fallback si el servidor no responde: guardar venta en localStorage
+  const guardarVentaOffline = (venta) => {
+    try {
+      const ventas = JSON.parse(localStorage.getItem("ventas_offline") || "[]");
+      ventas.push(venta);
+      localStorage.setItem("ventas_offline", JSON.stringify(ventas));
+      return true;
+    } catch (e) {
+      console.error("Error guardando venta offline:", e);
+      return false;
+    }
+  };
+
+  // Procesar pago -> enviar a API /api/ventas
   const procesarPago = async () => {
     if (!validarFormulario()) return;
 
+    if (carrito.length === 0) {
+      toast.error("El carrito está vacío");
+      return;
+    }
+
     setProcesandoPago(true);
 
+    const API = process.env.REACT_APP_API_URL || "http://localhost:3001";
+    const nuevaVenta = {
+      usuario_id: user?.id || null,
+      usuario_nombre: datosCliente.nombre,
+      usuario_email: datosCliente.email,
+      items: carrito.map(it => ({
+        id: it.id || null,
+        nombre: it.nombre || it.title || "Producto",
+        cantidad: it.cantidad || 1,
+        precio_unitario: parseFloat(it.precio || 0)
+      })),
+      subtotal: parseFloat(calcularSubtotal().toFixed(2)),
+      iva: parseFloat(calcularIVA().toFixed(2)),
+      recargo_envio: parseFloat(calcularRecargoEnvio().toFixed(2)),
+      total: parseFloat(calcularTotal().toFixed(2)),
+      metodoPago,
+      tipoEntrega,
+      notas: ""
+    };
+
     try {
-      // Simular procesamiento de pago
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      const resp = await fetch(`${API}/api/ventas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevaVenta),
+      });
 
-      // Limpiar carrito
+      if (!resp.ok) {
+        // leer posible mensaje del servidor
+        const text = await resp.text().catch(() => null);
+        throw new Error(text || `HTTP ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      toast.success(`Pedido registrado (ID: ${data.id || "—"}). El cajero podrá revisarlo.`);
+      // limpiar carrito
       localStorage.removeItem("carrito");
-      
-      toast.success("¡Pago procesado exitosamente!");
-      
-      // Redirigir a página de confirmación o dashboard
-      setTimeout(() => {
-        navigate("/cliente");
-      }, 2000);
-
-    } catch (error) {
-      toast.error("Error al procesar el pago");
+      setCarrito([]);
+      // opcional: navegar a confirmación
+      setTimeout(() => navigate("/cliente"), 800);
+    } catch (err) {
+      console.error("Error enviando venta al servidor:", err);
+      // fallback: guardar en localStorage para que el cajero pueda revisarlo si implementas lectura offline
+      const okOffline = guardarVentaOffline({
+        ...nuevaVenta,
+        id: Date.now(),
+        fecha_creacion: new Date().toISOString(),
+        estado: "pendiente_offline"
+      });
+      if (okOffline) {
+        toast.warn("No se pudo conectar al servidor. Pedido guardado localmente (ventas_offline). El cajero no lo verá hasta que sincronices.");
+        // limpiar carrito local de todas formas para evitar doble compra accidental
+        localStorage.removeItem("carrito");
+        setCarrito([]);
+        setTimeout(() => navigate("/cliente"), 900);
+      } else {
+        toast.error("No se pudo guardar el pedido. Revisa la conexión.");
+      }
     } finally {
       setProcesandoPago(false);
     }
@@ -167,14 +237,19 @@ export const FormularioPago = () => {
       toast.error("Por favor completa la dirección de entrega");
       return;
     }
-    setPaso((prev) => prev + 1);
+    setPaso(prev => prev + 1);
+
+    // hacer scroll al área de pago si aplica
+    if (paso + 1 === 3) {
+      setTimeout(() => {
+        const el = document.getElementById("metodo-pago-area");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 150);
+    }
   };
 
-  const handleAtras = () => setPaso((prev) => prev - 1);
-
-  const volverAlCarrito = () => {
-    navigate("/cliente/carrito");
-  };
+  const handleAtras = () => setPaso(prev => Math.max(1, prev - 1));
+  const volverAlCarrito = () => navigate("/cliente/carrito");
 
   return (
     <div className="d-flex flex-column min-vh-100">
@@ -183,7 +258,7 @@ export const FormularioPago = () => {
       <div className="container-fluid flex-grow-1">
         <div className="row">
           <Sidebar />
-          <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+          <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4" style={{ paddingBottom: "180px" }}>
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center border-bottom mb-3">
               <h2 className="text-primary fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
@@ -207,11 +282,11 @@ export const FormularioPago = () => {
                   <div className={`step-indicator ${paso === 1 ? "active" : ""}`}>
                     <FaUser /> <span className="d-none d-md-inline">Cliente</span>
                   </div>
-                  <div className="flex-grow-1 border-bottom mx-2" style={{height:2, background:"#ddd"}} />
+                  <div className="flex-grow-1 border-bottom mx-2" style={{ height: 2, background: "#ddd" }} />
                   <div className={`step-indicator ${paso === 2 ? "active" : ""}`}>
                     <FaMapMarkerAlt /> <span className="d-none d-md-inline">Entrega</span>
                   </div>
-                  <div className="flex-grow-1 border-bottom mx-2" style={{height:2, background:"#ddd"}} />
+                  <div className="flex-grow-1 border-bottom mx-2" style={{ height: 2, background: "#ddd" }} />
                   <div className={`step-indicator ${paso === 3 ? "active" : ""}`}>
                     <FaCreditCard /> <span className="d-none d-md-inline">Pago</span>
                   </div>
@@ -298,7 +373,7 @@ export const FormularioPago = () => {
                               onChange={() => setTipoEntrega("tienda")}
                             />
                             <label className="form-check-label w-100" htmlFor="retirarTienda">
-                              <div className="border rounded p-1 d-flex align-items-center h-100" style={{minHeight: "40px"}}>
+                              <div className="border rounded p-1 d-flex align-items-center h-100" style={{ minHeight: "40px" }}>
                                 <FaStore className="me-2 text-primary fs-6" />
                                 <div>
                                   <div className="fw-bold small">Retirar en tienda</div>
@@ -319,7 +394,7 @@ export const FormularioPago = () => {
                               onChange={() => setTipoEntrega("domicilio")}
                             />
                             <label className="form-check-label w-100" htmlFor="enviodomicilio">
-                              <div className="border rounded p-1 d-flex align-items-center h-100" style={{minHeight: "40px"}}>
+                              <div className="border rounded p-1 d-flex align-items-center h-100" style={{ minHeight: "40px" }}>
                                 <FaHome className="me-2 text-success fs-6" />
                                 <div>
                                   <div className="fw-bold small">Envío a domicilio</div>
@@ -380,6 +455,7 @@ export const FormularioPago = () => {
                 {/* Paso 3: Método de Pago */}
                 {paso === 3 && (
                   <motion.div
+                    id="metodo-pago-area"
                     className="card shadow-sm mb-2"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -404,7 +480,7 @@ export const FormularioPago = () => {
                               onChange={() => setMetodoPago("tarjeta")}
                             />
                             <label className="form-check-label w-100" htmlFor="tarjeta">
-                              <div className="text-center p-1 border rounded" style={{minHeight: "50px"}}>
+                              <div className="text-center p-1 border rounded" style={{ minHeight: "50px" }}>
                                 <FaCreditCard className="fs-5 text-primary mb-1" />
                                 <div className="small fw-bold">Tarjeta</div>
                               </div>
@@ -422,7 +498,7 @@ export const FormularioPago = () => {
                               onChange={() => setMetodoPago("transferencia")}
                             />
                             <label className="form-check-label w-100" htmlFor="transferencia">
-                              <div className="text-center p-1 border rounded" style={{minHeight: "50px"}}>
+                              <div className="text-center p-1 border rounded" style={{ minHeight: "50px" }}>
                                 <FaExchangeAlt className="fs-5 text-warning mb-1" />
                                 <div className="small fw-bold">Transferencia</div>
                               </div>
@@ -440,7 +516,7 @@ export const FormularioPago = () => {
                               onChange={() => setMetodoPago("efectivo")}
                             />
                             <label className="form-check-label w-100" htmlFor="efectivo">
-                              <div className="text-center p-1 border rounded" style={{minHeight: "50px"}}>
+                              <div className="text-center p-1 border rounded" style={{ minHeight: "50px" }}>
                                 <FaMoneyBillWave className="fs-5 text-success mb-1" />
                                 <div className="small fw-bold">Efectivo</div>
                               </div>
@@ -509,28 +585,51 @@ export const FormularioPago = () => {
                         </motion.div>
                       )}
 
-                      {/* Información de transferencia */}
+                      {/* Transferencia: QR ESTÁTICO */}
                       {metodoPago === "transferencia" && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
-                          className="p-2 bg-light rounded text-center mt-2"
+                          className="p-2 bg-light rounded mt-2 text-center"
                         >
                           <FaQrcode className="fs-3 text-warning mb-2" />
-                          <h6 className="small">Transferencia deUNA Ecuador</h6>
+                          <h6 className="small">Transferencia DeUna - Banco Pichincha</h6>
                           <p className="small text-muted mb-2">
-                            Escanea el código QR para transferir<br />
-                            <strong>Banco Pichincha</strong>
+                            Escanea el código QR para transferir a DeUna (Banco Pichincha).
                           </p>
-                          <div className="alert alert-info py-2 mb-0">
+
+                          <div className="row justify-content-center g-2">
+                            <div className="col-auto">
+                              <div className="qr-box border rounded p-2 d-flex flex-column align-items-center" style={{ minWidth: "160px" }}>
+                                <img
+                                  src={qrStatic}
+                                  alt="QR - Transferencia"
+                                  style={{ maxWidth: "160px", maxHeight: "160px", objectFit: "contain" }}
+                                />
+                                <small className="mt-2 text-muted">QR de transferencia</small>
+                              </div>
+                            </div>
+
+                            <div className="col-auto align-self-center">
+                              <div className="text-start">
+                                <div><strong>Beneficiario:</strong> DeUna Ecuador</div>
+                                <div><strong>Banco:</strong> Banco Pichincha</div>
+                                <div><strong>Tipo:</strong> Cuenta Corriente</div>
+                                <div><strong>N° Cuenta:</strong> 123-4567890-1</div>
+                                <div className="small text-muted">(Ejemplo — reemplaza por tus datos reales)</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="alert alert-info py-2 mt-3 mb-0">
                             <small>
-                              Una vez realizada la transferencia, tu pedido será procesado automáticamente.
+                              Una vez realizada la transferencia, el cajero podrá confirmar el pago desde su panel.
                             </small>
                           </div>
                         </motion.div>
                       )}
 
-                      {/* Información de efectivo */}
+                      {/* Efectivo */}
                       {metodoPago === "efectivo" && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
@@ -553,46 +652,13 @@ export const FormularioPago = () => {
                     </div>
                   </motion.div>
                 )}
-
-                {/* Botones de navegación */}
-                <div className="d-flex justify-content-between mt-3">
-                  {paso > 1 && (
-                    <button className="btn btn-outline-secondary btn-sm" onClick={handleAtras}>
-                      Atrás
-                    </button>
-                  )}
-                  <div className="flex-grow-1" />
-                  {paso < 3 && (
-                    <button className="btn btn-primary btn-sm" onClick={handleSiguiente}>
-                      Siguiente
-                    </button>
-                  )}
-                  {paso === 3 && (
-                    <button
-                      className="btn btn-success btn-sm"
-                      onClick={procesarPago}
-                      disabled={procesandoPago || !metodoPago}
-                    >
-                      {procesandoPago ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" />
-                          Procesando...
-                        </>
-                      ) : (
-                        <>
-                          <FaCheckCircle className="me-2" />
-                          Confirmar Pedido
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+                {/* Botones: dejamos barra fija abajo (fuera del flujo) */}
               </div>
 
               {/* Resumen de compra */}
               <div className="col-lg-5">
                 <motion.div
-                  className="card shadow-sm sticky-top"
+                  className="card shadow-sm sticky-top resumen-card"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
@@ -605,15 +671,15 @@ export const FormularioPago = () => {
                     </h5>
                   </div>
                   <div className="card-body">
-                    {/* Productos segmentados en tarjetas pequeñas */}
+                    {/* Productos */}
                     <div className="mb-3">
                       <div className="row g-2">
                         {carrito.map((item, index) => (
-                          <div className="col-12" key={item.id}>
+                          <div className="col-12" key={item.id || index}>
                             <div className="card border-0 shadow-sm mb-1">
                               <div className="card-body py-2 px-3 d-flex justify-content-between align-items-center">
                                 <div>
-                                  <div className="fw-bold small text-truncate" style={{maxWidth: "120px"}}>
+                                  <div className="fw-bold small text-truncate" style={{ maxWidth: "120px" }}>
                                     {item.nombre}
                                   </div>
                                   <div className="text-muted small">
@@ -629,6 +695,11 @@ export const FormularioPago = () => {
                             </div>
                           </div>
                         ))}
+                        {carrito.length === 0 && (
+                          <div className="col-12">
+                            <div className="text-center small text-muted py-2">No hay productos en el carrito</div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -640,7 +711,7 @@ export const FormularioPago = () => {
                       <span>${calcularSubtotal().toFixed(2)}</span>
                     </div>
                     <div className="d-flex justify-content-between mb-2">
-                      <span>IVA (12%):</span>
+                      <span>IVA (15%):</span>
                       <span>${calcularIVA().toFixed(2)}</span>
                     </div>
                     {tipoEntrega === "domicilio" && (
@@ -659,13 +730,11 @@ export const FormularioPago = () => {
                       </span>
                     </div>
 
-                    {/* Información adicional */}
+                    {/* Info adicional */}
                     <div className="mb-4">
                       <div className="d-flex align-items-center mb-2">
                         {tipoEntrega === "tienda" ? <FaStore className="me-2 text-primary" /> : <FaHome className="me-2 text-success" />}
-                        <small>
-                          {tipoEntrega === "tienda" ? "Retirar en tienda" : "Envío a domicilio"}
-                        </small>
+                        <small>{tipoEntrega === "tienda" ? "Retirar en tienda" : "Envío a domicilio"}</small>
                       </div>
                       <div className="d-flex align-items-center mb-2">
                         <FaCreditCard className="me-2 text-info" />
@@ -677,6 +746,12 @@ export const FormularioPago = () => {
                         </small>
                       </div>
                     </div>
+
+                    <div className="text-center">
+                      <button className="btn btn-outline-primary btn-sm" onClick={() => window.print()}>
+                        <FaCalculator className="me-1" /> Imprimir resumen
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               </div>
@@ -685,11 +760,55 @@ export const FormularioPago = () => {
         </div>
       </div>
 
+      {/* Barra de acciones fija, separada del footer */}
+      <div className="action-bar">
+        <div className="container d-flex justify-content-between align-items-center action-inner">
+          <div>
+            {paso > 1 ? (
+              <button className="btn btn-outline-secondary btn-sm" onClick={handleAtras}>
+                Atrás
+              </button>
+            ) : (
+              <button className="btn btn-outline-secondary btn-sm" onClick={volverAlCarrito}>
+                <FaArrowLeft className="me-1" /> Volver al carrito
+              </button>
+            )}
+          </div>
+
+          <div>
+            {paso < 3 && (
+              <button className="btn btn-primary btn-sm" onClick={handleSiguiente}>
+                Siguiente
+              </button>
+            )}
+            {paso === 3 && (
+              <button
+                className="btn btn-success btn-sm"
+                onClick={procesarPago}
+                disabled={procesandoPago || !metodoPago}
+              >
+                {procesandoPago ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <FaCheckCircle className="me-2" />
+                    Confirmar Pedido
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <footer className="bg-danger text-white py-2 text-center mt-auto">
         <small>Vendismarket — Compra segura garantizada.</small>
       </footer>
 
-      {/* Estilos rápidos para pasos y tarjetas compactas */}
+      {/* Estilos rápidos */}
       <style>{`
         .step-indicator {
           display: flex;
@@ -707,7 +826,54 @@ export const FormularioPago = () => {
         .card-header {
           border-radius: 10px 10px 0 0 !important;
         }
+
+        .resumen-card .card-body {
+          max-height: calc(100vh - 220px);
+          overflow-y: auto;
+        }
+
+        .action-bar {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 72px;
+          z-index: 1200;
+          pointer-events: none;
+        }
+        .action-bar .action-inner {
+          max-width: 1100px;
+          margin: 0 auto;
+          background: rgba(255,255,255,0.98);
+          padding: 10px;
+          border-radius: 10px;
+          box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+          pointer-events: auto;
+        }
+
+        @media (max-width: 991px) {
+          .action-bar {
+            left: 12px;
+            right: 12px;
+            bottom: 78px;
+          }
+          main {
+            padding-bottom: 220px !important;
+          }
+        }
+
+        .qr-box {
+          transition: all 0.12s ease;
+        }
+
+        @media (max-width: 1199px) {
+          .resumen-card {
+            position: sticky;
+            top: 12px;
+          }
+        }
       `}</style>
     </div>
   );
 };
+
+export default FormularioPago;

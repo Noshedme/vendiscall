@@ -1,3 +1,4 @@
+//carritoController.js en controllers en backend
 const db = require("../db");
 
 exports.getCarrito = async (req, res) => {
