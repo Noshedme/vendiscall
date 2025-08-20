@@ -161,8 +161,14 @@ export const FormularioPago = () => {
       return;
     }
 
+    // --- Notificación inmediata y limpieza de carrito ---
+    toast.success("¡Compra realizada! El cajero revisará tu pedido.");
+    localStorage.removeItem("carrito");
+    setCarrito([]); // Esto vacía el carrito para el usuario
     setProcesandoPago(true);
+    setTimeout(() => navigate("/cliente"), 1200);
 
+    // --- Envío al backend en segundo plano ---
     const API = process.env.REACT_APP_API_URL || "http://localhost:3001";
     const nuevaVenta = {
       usuario_id: user?.id || null,
@@ -189,38 +195,15 @@ export const FormularioPago = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nuevaVenta),
       });
-
-      if (!resp.ok) {
-        // leer posible mensaje del servidor
-        const text = await resp.text().catch(() => null);
-        throw new Error(text || `HTTP ${resp.status}`);
-      }
-
-      const data = await resp.json();
-      toast.success(`Pedido registrado (ID: ${data.id || "—"}). El cajero podrá revisarlo.`);
-      // limpiar carrito
-      localStorage.removeItem("carrito");
-      setCarrito([]);
-      // opcional: navegar a confirmación
-      setTimeout(() => navigate("/cliente"), 800);
+      // No mostrar más toasts aquí, ya se notificó al usuario
     } catch (err) {
-      console.error("Error enviando venta al servidor:", err);
-      // fallback: guardar en localStorage para que el cajero pueda revisarlo si implementas lectura offline
-      const okOffline = guardarVentaOffline({
+      // Fallback: guardar en localStorage si falla
+      guardarVentaOffline({
         ...nuevaVenta,
         id: Date.now(),
         fecha_creacion: new Date().toISOString(),
         estado: "pendiente_offline"
       });
-      if (okOffline) {
-        toast.warn("No se pudo conectar al servidor. Pedido guardado localmente (ventas_offline). El cajero no lo verá hasta que sincronices.");
-        // limpiar carrito local de todas formas para evitar doble compra accidental
-        localStorage.removeItem("carrito");
-        setCarrito([]);
-        setTimeout(() => navigate("/cliente"), 900);
-      } else {
-        toast.error("No se pudo guardar el pedido. Revisa la conexión.");
-      }
     } finally {
       setProcesandoPago(false);
     }
@@ -261,12 +244,12 @@ export const FormularioPago = () => {
           <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4" style={{ paddingBottom: "180px" }}>
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center border-bottom mb-3">
-              <h2 className="text-primary fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
+              <h2 className="text-danger fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
                 <FaCreditCard className="me-2" />
                 Finalizar Compra
               </h2>
               <button
-                className="btn btn-outline-secondary btn-sm"
+                className="btn btn-outline-danger btn-sm"
                 onClick={volverAlCarrito}
               >
                 <FaArrowLeft className="me-2" />
@@ -300,7 +283,7 @@ export const FormularioPago = () => {
                     animate={{ opacity: 1, y: 0 }}
                     style={{ borderRadius: "10px", minHeight: "180px" }}
                   >
-                    <div className="card-header bg-primary text-white py-2" style={{ borderRadius: "10px 10px 0 0" }}>
+                    <div className="card-header bg-danger text-white py-2" style={{ borderRadius: "10px 10px 0 0" }}>
                       <h6 className="mb-0" style={{ fontSize: "1rem" }}>
                         <FaUser className="me-2" />
                         Datos del Cliente
@@ -461,7 +444,7 @@ export const FormularioPago = () => {
                     animate={{ opacity: 1, y: 0 }}
                     style={{ borderRadius: "10px", minHeight: "120px" }}
                   >
-                    <div className="card-header bg-success text-white py-2" style={{ borderRadius: "10px 10px 0 0" }}>
+                    <div className="card-header bg-danger text-white py-2" style={{ borderRadius: "10px 10px 0 0" }}>
                       <h6 className="mb-0" style={{ fontSize: "1rem" }}>
                         <FaCreditCard className="me-2" />
                         Método de Pago
@@ -481,7 +464,7 @@ export const FormularioPago = () => {
                             />
                             <label className="form-check-label w-100" htmlFor="tarjeta">
                               <div className="text-center p-1 border rounded" style={{ minHeight: "50px" }}>
-                                <FaCreditCard className="fs-5 text-primary mb-1" />
+                                <FaCreditCard className="fs-5 text-danger mb-1" />
                                 <div className="small fw-bold">Tarjeta</div>
                               </div>
                             </label>
@@ -517,7 +500,7 @@ export const FormularioPago = () => {
                             />
                             <label className="form-check-label w-100" htmlFor="efectivo">
                               <div className="text-center p-1 border rounded" style={{ minHeight: "50px" }}>
-                                <FaMoneyBillWave className="fs-5 text-success mb-1" />
+                                <FaMoneyBillWave className="fs-5 text-warning mb-1" />
                                 <div className="small fw-bold">Efectivo</div>
                               </div>
                             </label>
@@ -664,7 +647,7 @@ export const FormularioPago = () => {
                   transition={{ delay: 0.3 }}
                   style={{ top: "20px" }}
                 >
-                  <div className="card-header bg-info text-white">
+                  <div className="card-header bg-warning text-dark">
                     <h5 className="mb-0">
                       <FaShoppingCart className="me-2" />
                       Resumen del Pedido
@@ -725,7 +708,7 @@ export const FormularioPago = () => {
 
                     <div className="d-flex justify-content-between mb-4">
                       <span className="fs-5 fw-bold">Total:</span>
-                      <span className="fs-4 fw-bold text-success">
+                      <span className="fs-4 fw-bold text-danger">
                         ${calcularTotal().toFixed(2)}
                       </span>
                     </div>
@@ -748,7 +731,7 @@ export const FormularioPago = () => {
                     </div>
 
                     <div className="text-center">
-                      <button className="btn btn-outline-primary btn-sm" onClick={() => window.print()}>
+                      <button className="btn btn-outline-danger btn-sm" onClick={() => window.print()}>
                         <FaCalculator className="me-1" /> Imprimir resumen
                       </button>
                     </div>
@@ -765,11 +748,11 @@ export const FormularioPago = () => {
         <div className="container d-flex justify-content-between align-items-center action-inner">
           <div>
             {paso > 1 ? (
-              <button className="btn btn-outline-secondary btn-sm" onClick={handleAtras}>
+              <button className="btn btn-outline-warning btn-sm" onClick={handleAtras}>
                 Atrás
               </button>
             ) : (
-              <button className="btn btn-outline-secondary btn-sm" onClick={volverAlCarrito}>
+              <button className="btn btn-outline-danger btn-sm" onClick={volverAlCarrito}>
                 <FaArrowLeft className="me-1" /> Volver al carrito
               </button>
             )}
@@ -777,13 +760,13 @@ export const FormularioPago = () => {
 
           <div>
             {paso < 3 && (
-              <button className="btn btn-primary btn-sm" onClick={handleSiguiente}>
+              <button className="btn btn-danger btn-sm" onClick={handleSiguiente}>
                 Siguiente
               </button>
             )}
             {paso === 3 && (
               <button
-                className="btn btn-success btn-sm"
+                className="btn btn-warning btn-sm"
                 onClick={procesarPago}
                 disabled={procesandoPago || !metodoPago}
               >
@@ -818,7 +801,7 @@ export const FormularioPago = () => {
           font-weight: 500;
         }
         .step-indicator.active {
-          color: #0d6efd;
+          color: #dc3545; /* rojo bootstrap */
         }
         .card {
           border-radius: 10px !important;

@@ -19,8 +19,7 @@ export const Sidebar = () => {
       { path: "/cajero/caja", label: "Caja Actual", icon: "bi-cash-coin" }, 
       { path: "/cajero/buscar", label: "Buscar Productos", icon: "bi-search" }, 
       { path: "/cajero/carrito", label: "Carrito en Curso", icon: "bi-cart" }, 
-      { path: "/cajero/historial", label: "Historial de Ventas", icon: "bi-clock-history" }, 
-      { path: "/cajero/cuenta", label: "Mi Cuenta", icon: "bi-person-circle" } 
+      { path: "/cajero/historial", label: "Historial de Ventas", icon: "bi-clock-history" } 
     ], 
     cliente: [
       { path: "/cliente", label: "Inicio", icon: "bi-house-door" },

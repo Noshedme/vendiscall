@@ -153,13 +153,13 @@ export const CarritoCliente = () => {
           <Sidebar />
           <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
             <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
-              <h2 className="text-primary fw-bold mb-0">
+              <h2 className="text-danger fw-bold mb-0">
                 <FaShoppingCart className="me-2" />
                 Mi Carrito
               </h2>
               <div className="d-flex gap-2">
                 <button
-                  className="btn btn-outline-primary"
+                  className="btn btn-outline-warning"
                   onClick={continuarComprando}
                 >
                   <FaArrowLeft className="me-2" />
@@ -179,8 +179,8 @@ export const CarritoCliente = () => {
               {/* Lista de productos */}
               <div className="col-lg-8">
                 <div className="card shadow-sm">
-                  <div className="card-header bg-primary text-white">
-                    <h5 className="mb-0">
+                  <div className="card-header bg-danger text-white">
+                    <h5 className="mb-0 text-warning">
                       Productos ({carrito.length} {carrito.length === 1 ? 'artículo' : 'artículos'})
                     </h5>
                   </div>
@@ -205,14 +205,14 @@ export const CarritoCliente = () => {
                                       className="bg-light rounded d-flex align-items-center justify-content-center"
                                       style={{ width: "60px", height: "60px" }}
                                     >
-                                      <FaShoppingBag className="text-muted" />
+                                      <FaShoppingBag className="text-danger" />
                                     </div>
                                   </div>
                                   <div>
                                     <h6 className="mb-1 fw-bold text-danger">{item.nombre}</h6>
                                     <small className="text-muted">Código: {item.codigo}</small>
                                     <br />
-                                    <small className="text-success fw-bold">
+                                    <small className="fw-bold text-warning">
                                       ${parseFloat(item.precio).toFixed(2)} c/u
                                     </small>
                                   </div>
@@ -233,13 +233,13 @@ export const CarritoCliente = () => {
                                         autoFocus
                                       />
                                       <button
-                                        className="btn btn-success btn-sm"
+                                        className="btn btn-danger btn-sm"
                                         onClick={() => guardarCantidadEditada(productoId)}
                                       >
                                         <FaSave />
                                       </button>
                                       <button
-                                        className="btn btn-secondary btn-sm"
+                                        className="btn btn-warning btn-sm"
                                         onClick={cancelarEdicion}
                                       >
                                         <FaTimes />
@@ -248,7 +248,7 @@ export const CarritoCliente = () => {
                                   ) : (
                                     <div className="d-flex align-items-center gap-2">
                                       <button
-                                        className="btn btn-outline-secondary btn-sm"
+                                        className="btn btn-outline-danger btn-sm"
                                         onClick={() => actualizarCantidad(productoId, item.cantidad - 1)}
                                       >
                                         <FaMinus />
@@ -262,7 +262,7 @@ export const CarritoCliente = () => {
                                         {item.cantidad}
                                       </span>
                                       <button
-                                        className="btn btn-outline-secondary btn-sm"
+                                        className="btn btn-outline-danger btn-sm"
                                         onClick={() => actualizarCantidad(productoId, item.cantidad + 1)}
                                         disabled={item.cantidad >= item.stock}
                                       >
@@ -279,7 +279,7 @@ export const CarritoCliente = () => {
                               </div>
 
                               <div className="col-md-2 text-center">
-                                <div className="fw-bold text-success fs-5">
+                                <div className="fw-bold text-danger fs-5">
                                   ${(item.precio * item.cantidad).toFixed(2)}
                                 </div>
                               </div>
@@ -310,36 +310,36 @@ export const CarritoCliente = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <div className="card-header bg-success text-white">
+                  <div className="card-header bg-warning text-dark">
                     <h5 className="mb-0">Resumen de compra</h5>
                   </div>
                   <div className="card-body">
                     <div className="d-flex justify-content-between mb-2">
                       <span>Subtotal:</span>
-                      <span className="fw-bold">${obtenerSubtotal().toFixed(2)}</span>
+                      <span className="fw-bold text-danger">${obtenerSubtotal().toFixed(2)}</span>
                     </div>
                     <div className="d-flex justify-content-between mb-2">
                       <span>IVA (12%):</span>
-                      <span className="fw-bold">${obtenerIVA().toFixed(2)}</span>
+                      <span className="fw-bold text-danger">${obtenerIVA().toFixed(2)}</span>
                     </div>
                     <hr />
                     <div className="d-flex justify-content-between mb-4">
                       <span className="fs-5 fw-bold">Total:</span>
-                      <span className="fs-4 fw-bold text-success">
+                      <span className="fs-4 fw-bold text-danger">
                         ${obtenerTotal().toFixed(2)}
                       </span>
                     </div>
 
                     <div className="d-grid gap-2">
                       <button
-                        className="btn btn-success btn-lg"
+                        className="btn btn-danger btn-lg"
                         onClick={procederAlPago}
                       >
                         <FaCreditCard className="me-2" />
                         Proceder al pago
                       </button>
                       <button
-                        className="btn btn-outline-primary"
+                        className="btn btn-outline-warning"
                         onClick={continuarComprando}
                       >
                         Seguir comprando
@@ -351,7 +351,6 @@ export const CarritoCliente = () => {
                       <small className="text-muted">
                         📦 Envío gratis para compras superiores a $50.00
                         <br />
-                        🚚 Entrega en 24-48 horas
                         <br />
                         💳 Aceptamos múltiples formas de pago
                       </small>
