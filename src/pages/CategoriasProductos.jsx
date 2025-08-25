@@ -53,7 +53,7 @@ export const CategoriasProductos = () => {
   const manejarAgregarAlCarrito = async (producto) => {
     const success = await agregarAlCarrito(producto);
     if (!success) {
-      console.log("No se pudo agregar al carrito, revisa la consola");
+      console.log("No se pudo agregar al carrito, vuelve a intentarlo");
     }
   };
 
@@ -212,20 +212,28 @@ export const CategoriasProductos = () => {
                       transition={{ delay: index * 0.05 }}
                       whileHover={{ y: -5, transition: { duration: 0.2 } }}
                     >
-                      {/* Imagen del producto (placeholder) */}
-                      <div 
-                        className="card-img-top d-flex align-items-center justify-content-center bg-light position-relative"
-                        style={{ height: "200px" }}
-                      >
-                        <FaBoxOpen className="fs-1 text-muted" />
-                        
-                        {/* Badge de cantidad en carrito */}
-                        {cantidadEnCarrito > 0 && (
-                          <span className="position-absolute top-0 end-0 m-2 badge bg-success rounded-pill">
-                            En carrito: {cantidadEnCarrito}
-                          </span>
-                        )}
-                      </div>
+{/* Imagen del producto */}
+<div className="card-img-top position-relative" style={{ height: "200px" }}>
+  {producto.imagen_url ? (
+    <img
+      src={producto.imagen_url}
+      alt={producto.nombre}
+      className="img-fluid h-100 w-100 object-fit-contain p-2"
+    />
+  ) : (
+    <div className="d-flex align-items-center justify-content-center bg-light h-100">
+      <FaBoxOpen className="fs-1 text-muted" />
+    </div>
+  )}
+
+  {/* Badge de cantidad en carrito */}
+  {cantidadEnCarrito > 0 && (
+    <span className="position-absolute top-0 end-0 m-2 badge bg-success rounded-pill">
+      En carrito: {cantidadEnCarrito}
+    </span>
+  )}
+</div>
+
 
                       <div className="card-body d-flex flex-column">
                         <div className="d-flex justify-content-between align-items-start mb-2">
