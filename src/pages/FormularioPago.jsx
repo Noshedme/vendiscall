@@ -1,5 +1,5 @@
 // src/pages/FormularioPago.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
 import {
@@ -25,11 +25,8 @@ import { useAuth } from "../context/AuthContext"; // si no existe ajusta o elimi
 
 /**
  * FormularioPago.jsx
- * - Envía la venta al endpoint POST /api/ventas (API configurable por REACT_APP_API_URL)
- * - Si la API no responde, guarda la venta en localStorage como fallback (ventas_offline)
- * - El cajero podrá ver las ventas desde la API (o desde localStorage si usas fallback)
- *
- * NOTA: Ajusta la URL de la API con REACT_APP_API_URL (ej: http://localhost:3001)
+ * - Crea pedido en POST /api/pedidos y lo marca como 'pagado' para que vaya directo al historial.
+ * - Manejo simplificado para evitar quedarse 'Procesando...'
  */
 
 export const FormularioPago = () => {
@@ -60,6 +57,7 @@ export const FormularioPago = () => {
 
   useEffect(() => {
     cargarCarrito();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const cargarCarrito = () => {
@@ -152,7 +150,7 @@ export const FormularioPago = () => {
     }
   };
 
-  // Procesar pago -> enviar a API /api/ventas
+  // Procesar pago -> crear pedido en /api/pedidos y marcarlo como pagado
   const procesarPago = async () => {
     if (!validarFormulario()) return;
 
@@ -161,51 +159,99 @@ export const FormularioPago = () => {
       return;
     }
 
-    // --- Notificación inmediata y limpieza de carrito ---
-    toast.success("¡Compra realizada! El cajero revisará tu pedido.");
-    localStorage.removeItem("carrito");
-    setCarrito([]); // Esto vacía el carrito para el usuario
-    setProcesandoPago(true);
-    setTimeout(() => navigate("/cliente"), 1200);
+    // “Por parte del login del cliente”
+    if (!user?.id) {
+      toast.error("Inicia sesión para completar tu compra");
+      navigate("/login"); // ajusta si tu ruta difiere
+      return;
+    }
 
-    // --- Envío al backend en segundo plano ---
+    setProcesandoPago(true);
+
     const API = process.env.REACT_APP_API_URL || "http://localhost:3001";
-    const nuevaVenta = {
-      usuario_id: user?.id || null,
-      usuario_nombre: datosCliente.nombre,
-      usuario_email: datosCliente.email,
-      items: carrito.map(it => ({
-        id: it.id || null,
-        nombre: it.nombre || it.title || "Producto",
+
+    const payloadPedido = {
+      userId: user.id,
+      productos: carrito.map((it) => ({
+        id: it.id,
         cantidad: it.cantidad || 1,
-        precio_unitario: parseFloat(it.precio || 0)
+        precio: parseFloat(it.precio || 0),
       })),
-      subtotal: parseFloat(calcularSubtotal().toFixed(2)),
-      iva: parseFloat(calcularIVA().toFixed(2)),
-      recargo_envio: parseFloat(calcularRecargoEnvio().toFixed(2)),
       total: parseFloat(calcularTotal().toFixed(2)),
       metodoPago,
-      tipoEntrega,
-      notas: ""
+      datosEnvio:
+        tipoEntrega === "domicilio"
+          ? `${datosCliente.direccion} | ${datosCliente.ciudad}${datosCliente.codigoPostal ? " | " + datosCliente.codigoPostal : ""}`
+          : "",
+      notas: "",
+      // Enviamos estado 'pagado' para que no espere confirmación de cajero
+      estado: "pagado"
     };
 
     try {
-      const resp = await fetch(`${API}/api/ventas`, {
+      const resp = await fetch(`${API}/api/pedidos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevaVenta),
+        body: JSON.stringify(payloadPedido),
       });
-      // No mostrar más toasts aquí, ya se notificó al usuario
+
+      // intentar parsear JSON si viene, si no, fallback a objeto vacío
+      let body = {};
+      try {
+        body = await resp.json();
+      } catch (e) {
+        body = {};
+      }
+
+      if (!resp.ok) {
+        const msg = body.message || `Error ${resp.status}: no se pudo crear el pedido`;
+        throw new Error(msg);
+      }
+
+      const { pedidoId, numeroFactura } = body;
+
+      // 2) Limpieza y confirmación: quitamos spinner antes de navegar
+      localStorage.removeItem("carrito");
+      setCarrito([]);
+      setProcesandoPago(false); // importante: quitar estado procesando inmediatamente
+      toast.success(`¡Pedido creado! Factura ${numeroFactura || `FAC-${String(pedidoId).padStart(6, "0")}`}`);
+
+      // 3) Redirigir al historial y abrir el modal de ese pedido
+      navigate("/cliente/historial", { state: { pedidoId, numeroFactura } });
+
     } catch (err) {
-      // Fallback: guardar en localStorage si falla
+      console.error("Error en el registro del pedido:", err);
+
+      // Fallback offline
       guardarVentaOffline({
-        ...nuevaVenta,
+        usuario_id: user?.id || null,
+        usuario_nombre: datosCliente.nombre,
+        usuario_email: datosCliente.email,
+        usuario_telefono: datosCliente.telefono,
+        tipo_entrega: tipoEntrega,
+        direccion_entrega: tipoEntrega === "domicilio" ? datosCliente.direccion : null,
+        ciudad: tipoEntrega === "domicilio" ? datosCliente.ciudad : null,
+        codigo_postal: tipoEntrega === "domicilio" ? datosCliente.codigoPostal : null,
+        metodo_pago: metodoPago,
+        items: carrito.map((it) => ({
+          id: it.id || null,
+          nombre: it.nombre || it.title || "Producto",
+          cantidad: it.cantidad || 1,
+          precio_unitario: parseFloat(it.precio || 0),
+        })),
+        subtotal: parseFloat(calcularSubtotal().toFixed(2)),
+        iva: parseFloat(calcularIVA().toFixed(2)),
+        recargo_envio: parseFloat(calcularRecargoEnvio().toFixed(2)),
+        total: parseFloat(calcularTotal().toFixed(2)),
+        notas: "",
         id: Date.now(),
         fecha_creacion: new Date().toISOString(),
-        estado: "pendiente_offline"
+        estado: "pendiente_offline",
       });
-    } finally {
+
+      // asegurar quitar spinner y mostrar mensaje claro
       setProcesandoPago(false);
+      toast.error(err.message || "No se pudo registrar tu pedido. Guardamos offline y reintentaremos.");
     }
   };
 
@@ -602,12 +648,6 @@ export const FormularioPago = () => {
                                 <div className="small text-muted">(Ejemplo — reemplaza por tus datos reales)</div>
                               </div>
                             </div>
-                          </div>
-
-                          <div className="alert alert-info py-2 mt-3 mb-0">
-                            <small>
-                              Una vez realizada la transferencia, el cajero podrá confirmar el pago desde su panel.
-                            </small>
                           </div>
                         </motion.div>
                       )}

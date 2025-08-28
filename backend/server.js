@@ -26,7 +26,8 @@ app.get("/", (req, res) => {
       productos: "GET /api/productos",
       usuarios: "GET /api/usuarios",
       reclamos: "GET /api/reclamos",
-      ventas: "POST /api/ventas  | GET /api/ventas | GET /api/ventas/:id | PATCH /api/ventas/:id"
+      ventas: "POST /api/ventas  | GET /api/ventas | GET /api/ventas/:id | PATCH /api/ventas/:id",
+      pedidos: "POST /api/pedidos | GET /api/pedidos/cliente/:userId | GET /api/pedidos/detalle/:pedidoId"
     }
   });
 });
@@ -70,12 +71,27 @@ try {
   console.warn("⚠️  No se encontró ./routes/carrito.");
 }
 
-// Montar rutas de ventas (crea backend/routes/ventasRoutes.js con el contenido que definimos)
+// Montar rutas de ventas
 try {
   const ventasRoutes = require("./routes/ventasRoutes");
   app.use("/api/ventas", ventasRoutes);
 } catch (err) {
   console.warn("⚠️  No se encontró ./routes/ventasRoutes. Crea backend/routes/ventasRoutes.js para habilitar ventas en BBDD.");
+}
+
+// Montar rutas de pedidos (NUEVO)
+try {
+  const pedidosRoutes = require("./routes/pedidosRoutes");
+  app.use("/api/pedidos", pedidosRoutes);
+} catch (err) {
+  console.warn("⚠️  No se encontró ./routes/pedidosRoutes.");
+}
+
+try {
+  const historialRoutes = require('./routes/historial');
+  app.use('/api/historial', historialRoutes);
+} catch (err) {
+  console.warn("⚠️  No se encontró ./routes/historial.");
 }
 
 /*

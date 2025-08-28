@@ -26,6 +26,7 @@ export const Sidebar = () => {
       { path: "/cliente/cuenta", label: "Mi Cuenta", icon: "bi-person-circle" },
       { path: "/cliente/categorias", label: "Categorías", icon: "bi-tags" },
       { path: "/cliente/carrito", label: "Carrito", icon: "bi-cart" },
+      { path: "/cliente/historial", label: "Mis Pedidos", icon: "bi-clock-history" },
       { path: "/cliente/reclamos", label: "Reclamos", icon: "bi-chat-dots" }
     ]
 

@@ -1,3 +1,4 @@
+//carrito en backend/routes/carrito.js
 const express = require("express");
 const router = express.Router();
 const carritoController = require("../controllers/carritoController");

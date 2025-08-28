@@ -213,9 +213,6 @@ export function Reportes() {
                   >
                     <i className="bi bi-arrow-clockwise"></i> Actualizar
                   </button>
-                  <button type="button" className="btn btn-sm btn-outline-secondary">
-                    <i className="bi bi-download"></i> Exportar
-                  </button>
                 </div>
               </div>
             </div>

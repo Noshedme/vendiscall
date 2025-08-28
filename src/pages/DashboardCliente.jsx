@@ -99,7 +99,7 @@ export const DashboardCliente = () => {
                     </p>
                     <button
                       className="btn btn-primary mt-auto"
-                      onClick={() => navigate("/cliente/pedidos")}
+                      onClick={() => navigate("/cliente/historial")}
                     >
                       Ver Pedidos
                     </button>
